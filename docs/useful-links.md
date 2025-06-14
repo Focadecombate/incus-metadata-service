@@ -18,3 +18,5 @@
 <https://gitlab.luizalabs.com/magalu-cloud-iaas/api/api-product/compute-vendordata/-/blob/main/compute_vendordata/vendordata/wsgi_app.py?ref_type=heads>
 <https://etcd.io/>
 <https://github.com/aws/aws-ec2-instance-connect-config>
+<https://github.com/aws/amazon-ec2-metadata-mock>
+<https://cloudinit.readthedocs.io/en/latest/howto/debug_user_data.html>

@@ -14,8 +14,9 @@ func startServer() {
 	// Create a new Gin router
 	router := gin.Default()
 
-	// Define a simple health check endpoint
-	router.GET("/health", api.HealthCheck)
+	// Register public API routes
+	api.SetupRouter(router)
+
 	logs.Logger.Info().Msg("Metadata service server started on port 8080")
 
 	// Start the server on port 8080

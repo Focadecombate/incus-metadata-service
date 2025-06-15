@@ -1,0 +1,12 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    queries: "metadata-service/internal/storage/db/query.sql"
+    schema: "metadata-service/internal/storage/db/schema.sql"
+    gen:
+      go:
+        package: "db"
+        out: "metadata-service/internal/storage/db"
+        emit_prepared_queries: true
+        emit_interface: true
+        emit_pointers_for_null_types: true

@@ -3,3 +3,6 @@ run-api:
 
 lint:
 	golangci-lint run ./...
+
+generate-db:
+	sqlc generate

@@ -1,12 +1,12 @@
-package public
+package configs
 
 import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterPublicRoutes registers the public API routes for the metadata service.
-func RegisterPublicRoutes(router *gin.Engine) {
-	publicGroup := router.Group("/public")
+// RegisterConfigRoutes registers the public API routes for the metadata service.
+func RegisterConfigRoutes(router *gin.Engine) {
+	publicGroup := router.Group("/configs")
 	// Metadata endpoints
 	publicGroup.GET("/meta-data", AllMetadataHandler)
 	publicGroup.GET("/meta-data/:key", MetadataByKeyHandler)

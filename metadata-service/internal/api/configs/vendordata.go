@@ -1,4 +1,4 @@
-package public
+package configs
 
 import (
 	"net/http"

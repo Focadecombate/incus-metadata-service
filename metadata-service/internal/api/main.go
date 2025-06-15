@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/api/public"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/api/configs"
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,7 +11,7 @@ func SetupRouter(router *gin.Engine) *gin.Engine {
 	router.GET("/health", HealthCheck)
 
 	// Register public API routes
-	public.RegisterPublicRoutes(router)
+	configs.RegisterConfigRoutes(router)
 
 	return router
 }

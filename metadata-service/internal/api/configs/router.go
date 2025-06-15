@@ -2,15 +2,17 @@ package configs
 
 import (
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/config"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db"
 	"github.com/gin-gonic/gin"
 )
 
 // RegisterConfigRoutes registers the public API routes for the metadata service.
-func RegisterConfigRoutes(router *gin.Engine, cfg *config.Config) {
+func RegisterConfigRoutes(router *gin.Engine, cfg *config.Config, db *db.Queries) {
 	publicGroup := router.Group("/configs")
 
 	handlers := &Handler{
-		config: cfg,
+		Config:   cfg,
+		Database: db,
 	}
 
 	// Metadata endpoints

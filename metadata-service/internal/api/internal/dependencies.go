@@ -1,4 +1,4 @@
-package configs
+package internal_routes
 
 import (
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/config"

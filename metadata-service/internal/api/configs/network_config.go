@@ -39,7 +39,8 @@ func mockNetworkConfig() types.NetworkConfig {
 	}
 }
 
-func NetworkConfigHandler(c *gin.Context) {
+
+func (d *Handler) NetworkConfigHandler(c *gin.Context) {
 	// This is a placeholder for the network configuration handler logic.
 	// In a real application, you would retrieve and return network configuration data here.
 	requestedContentType := c.GetHeader("Accept")

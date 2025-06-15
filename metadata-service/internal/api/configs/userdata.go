@@ -36,7 +36,7 @@ func mockUserData() types.UserData {
 	}
 }
 
-func UserDataHandler(c *gin.Context) {
+func (h *Handler) UserDataHandler(c *gin.Context) {
 	// This is a placeholder for the user data handler logic.
 	// In a real application, you would retrieve and return user data here.
 	requested_content_type := c.GetHeader("Accept")

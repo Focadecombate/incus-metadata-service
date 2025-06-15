@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func VendorDataHandler(c *gin.Context) {
+func (h *Handler) VendorDataHandler(c *gin.Context) {
 	// This is a placeholder for the vendor data handler logic.
 	// In a real application, you would retrieve and return vendor data here.
 	c.JSON(http.StatusOK, gin.H{

@@ -46,7 +46,7 @@ func mockMetadata() types.Metadata {
 		}}
 }
 
-func AllMetadataHandler(c *gin.Context) {
+func (h *Handler) AllMetadataHandler(c *gin.Context) {
 	// This is a placeholder for the metadata handler logic.
 	// In a real application, you would retrieve and return metadata here.
 
@@ -69,7 +69,7 @@ func AllMetadataHandler(c *gin.Context) {
 	c.YAML(http.StatusOK, metadata)
 }
 
-func MetadataByKeyHandler(c *gin.Context) {
+func (h *Handler) MetadataByKeyHandler(c *gin.Context) {
 	key := c.Param("key")
 	// This is a placeholder for the metadata by key handler logic.
 	// In a real application, you would retrieve and return metadata for the given key here.

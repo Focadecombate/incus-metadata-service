@@ -22,7 +22,7 @@ func startServer() {
 	router := gin.Default()
 
 	// Register public API routes
-	api.SetupRouter(router)
+	api.SetupRouter(router, cfg)
 
 	logs.Logger.Info().Msg("Metadata service server started on port " + cfg.Port)
 

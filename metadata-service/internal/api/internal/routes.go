@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterInternalRoutes(router *gin.Engine, cfg *config.Config, db *db.Queries) {
+func RegisterInternalRoutes(router *gin.Engine, cfg *config.Config, db db.Querier) {
 	// Register internal routes here
 
 	handler := Handler{

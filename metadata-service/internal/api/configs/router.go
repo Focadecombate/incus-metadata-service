@@ -7,7 +7,7 @@ import (
 )
 
 // RegisterConfigRoutes registers the public API routes for the metadata service.
-func RegisterConfigRoutes(router *gin.Engine, cfg *config.Config, db *db.Queries) {
+func RegisterConfigRoutes(router *gin.Engine, cfg *config.Config, db db.Querier) {
 	publicGroup := router.Group("/configs")
 
 	handlers := &Handler{

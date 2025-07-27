@@ -6,6 +6,6 @@ import (
 )
 
 type Handler struct {
-	Config *config.Config
-	Database *db.Queries
+	Config   *config.Config
+	Database db.Querier
 }

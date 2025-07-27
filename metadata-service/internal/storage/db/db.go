@@ -24,14 +24,89 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.createInstanceStmt, err = db.PrepareContext(ctx, createInstance); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateInstance: %w", err)
+	}
+	if q.createInstanceLogStmt, err = db.PrepareContext(ctx, createInstanceLog); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateInstanceLog: %w", err)
+	}
+	if q.createOrUpdateInstanceStateStmt, err = db.PrepareContext(ctx, createOrUpdateInstanceState); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateOrUpdateInstanceState: %w", err)
+	}
+	if q.createProfileStmt, err = db.PrepareContext(ctx, createProfile); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateProfile: %w", err)
+	}
 	if q.createVendorDataStmt, err = db.PrepareContext(ctx, createVendorData); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateVendorData: %w", err)
+	}
+	if q.deleteInstanceStmt, err = db.PrepareContext(ctx, deleteInstance); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteInstance: %w", err)
+	}
+	if q.deleteInstanceLogsStmt, err = db.PrepareContext(ctx, deleteInstanceLogs); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteInstanceLogs: %w", err)
+	}
+	if q.deleteInstanceStateStmt, err = db.PrepareContext(ctx, deleteInstanceState); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteInstanceState: %w", err)
+	}
+	if q.deleteOldInstanceLogsStmt, err = db.PrepareContext(ctx, deleteOldInstanceLogs); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteOldInstanceLogs: %w", err)
+	}
+	if q.deleteProfileStmt, err = db.PrepareContext(ctx, deleteProfile); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteProfile: %w", err)
 	}
 	if q.deleteVendorDataStmt, err = db.PrepareContext(ctx, deleteVendorData); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteVendorData: %w", err)
 	}
+	if q.getInstanceStmt, err = db.PrepareContext(ctx, getInstance); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstance: %w", err)
+	}
+	if q.getInstanceByIDStmt, err = db.PrepareContext(ctx, getInstanceByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceByID: %w", err)
+	}
+	if q.getInstanceByIPStmt, err = db.PrepareContext(ctx, getInstanceByIP); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceByIP: %w", err)
+	}
+	if q.getInstanceLogsStmt, err = db.PrepareContext(ctx, getInstanceLogs); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceLogs: %w", err)
+	}
+	if q.getInstanceLogsByLevelStmt, err = db.PrepareContext(ctx, getInstanceLogsByLevel); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceLogsByLevel: %w", err)
+	}
+	if q.getInstanceLogsByTypeStmt, err = db.PrepareContext(ctx, getInstanceLogsByType); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceLogsByType: %w", err)
+	}
+	if q.getInstanceStateStmt, err = db.PrepareContext(ctx, getInstanceState); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceState: %w", err)
+	}
+	if q.getProfileStmt, err = db.PrepareContext(ctx, getProfile); err != nil {
+		return nil, fmt.Errorf("error preparing query GetProfile: %w", err)
+	}
 	if q.getVendorDataStmt, err = db.PrepareContext(ctx, getVendorData); err != nil {
 		return nil, fmt.Errorf("error preparing query GetVendorData: %w", err)
+	}
+	if q.hardDeleteInstanceStmt, err = db.PrepareContext(ctx, hardDeleteInstance); err != nil {
+		return nil, fmt.Errorf("error preparing query HardDeleteInstance: %w", err)
+	}
+	if q.listInstancesStmt, err = db.PrepareContext(ctx, listInstances); err != nil {
+		return nil, fmt.Errorf("error preparing query ListInstances: %w", err)
+	}
+	if q.listInstancesByProjectStmt, err = db.PrepareContext(ctx, listInstancesByProject); err != nil {
+		return nil, fmt.Errorf("error preparing query ListInstancesByProject: %w", err)
+	}
+	if q.listProfilesStmt, err = db.PrepareContext(ctx, listProfiles); err != nil {
+		return nil, fmt.Errorf("error preparing query ListProfiles: %w", err)
+	}
+	if q.listProfilesByProjectStmt, err = db.PrepareContext(ctx, listProfilesByProject); err != nil {
+		return nil, fmt.Errorf("error preparing query ListProfilesByProject: %w", err)
+	}
+	if q.updateInstanceStmt, err = db.PrepareContext(ctx, updateInstance); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateInstance: %w", err)
+	}
+	if q.updateInstanceIPStmt, err = db.PrepareContext(ctx, updateInstanceIP); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateInstanceIP: %w", err)
+	}
+	if q.updateProfileStmt, err = db.PrepareContext(ctx, updateProfile); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateProfile: %w", err)
 	}
 	if q.updateVendorDataStmt, err = db.PrepareContext(ctx, updateVendorData); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateVendorData: %w", err)
@@ -41,9 +116,54 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.createInstanceStmt != nil {
+		if cerr := q.createInstanceStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createInstanceStmt: %w", cerr)
+		}
+	}
+	if q.createInstanceLogStmt != nil {
+		if cerr := q.createInstanceLogStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createInstanceLogStmt: %w", cerr)
+		}
+	}
+	if q.createOrUpdateInstanceStateStmt != nil {
+		if cerr := q.createOrUpdateInstanceStateStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createOrUpdateInstanceStateStmt: %w", cerr)
+		}
+	}
+	if q.createProfileStmt != nil {
+		if cerr := q.createProfileStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createProfileStmt: %w", cerr)
+		}
+	}
 	if q.createVendorDataStmt != nil {
 		if cerr := q.createVendorDataStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createVendorDataStmt: %w", cerr)
+		}
+	}
+	if q.deleteInstanceStmt != nil {
+		if cerr := q.deleteInstanceStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteInstanceStmt: %w", cerr)
+		}
+	}
+	if q.deleteInstanceLogsStmt != nil {
+		if cerr := q.deleteInstanceLogsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteInstanceLogsStmt: %w", cerr)
+		}
+	}
+	if q.deleteInstanceStateStmt != nil {
+		if cerr := q.deleteInstanceStateStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteInstanceStateStmt: %w", cerr)
+		}
+	}
+	if q.deleteOldInstanceLogsStmt != nil {
+		if cerr := q.deleteOldInstanceLogsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteOldInstanceLogsStmt: %w", cerr)
+		}
+	}
+	if q.deleteProfileStmt != nil {
+		if cerr := q.deleteProfileStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteProfileStmt: %w", cerr)
 		}
 	}
 	if q.deleteVendorDataStmt != nil {
@@ -51,9 +171,89 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing deleteVendorDataStmt: %w", cerr)
 		}
 	}
+	if q.getInstanceStmt != nil {
+		if cerr := q.getInstanceStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceByIDStmt != nil {
+		if cerr := q.getInstanceByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceByIDStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceByIPStmt != nil {
+		if cerr := q.getInstanceByIPStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceByIPStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceLogsStmt != nil {
+		if cerr := q.getInstanceLogsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceLogsStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceLogsByLevelStmt != nil {
+		if cerr := q.getInstanceLogsByLevelStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceLogsByLevelStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceLogsByTypeStmt != nil {
+		if cerr := q.getInstanceLogsByTypeStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceLogsByTypeStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceStateStmt != nil {
+		if cerr := q.getInstanceStateStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceStateStmt: %w", cerr)
+		}
+	}
+	if q.getProfileStmt != nil {
+		if cerr := q.getProfileStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getProfileStmt: %w", cerr)
+		}
+	}
 	if q.getVendorDataStmt != nil {
 		if cerr := q.getVendorDataStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getVendorDataStmt: %w", cerr)
+		}
+	}
+	if q.hardDeleteInstanceStmt != nil {
+		if cerr := q.hardDeleteInstanceStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing hardDeleteInstanceStmt: %w", cerr)
+		}
+	}
+	if q.listInstancesStmt != nil {
+		if cerr := q.listInstancesStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listInstancesStmt: %w", cerr)
+		}
+	}
+	if q.listInstancesByProjectStmt != nil {
+		if cerr := q.listInstancesByProjectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listInstancesByProjectStmt: %w", cerr)
+		}
+	}
+	if q.listProfilesStmt != nil {
+		if cerr := q.listProfilesStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listProfilesStmt: %w", cerr)
+		}
+	}
+	if q.listProfilesByProjectStmt != nil {
+		if cerr := q.listProfilesByProjectStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listProfilesByProjectStmt: %w", cerr)
+		}
+	}
+	if q.updateInstanceStmt != nil {
+		if cerr := q.updateInstanceStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateInstanceStmt: %w", cerr)
+		}
+	}
+	if q.updateInstanceIPStmt != nil {
+		if cerr := q.updateInstanceIPStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateInstanceIPStmt: %w", cerr)
+		}
+	}
+	if q.updateProfileStmt != nil {
+		if cerr := q.updateProfileStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateProfileStmt: %w", cerr)
 		}
 	}
 	if q.updateVendorDataStmt != nil {
@@ -98,21 +298,71 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                   DBTX
-	tx                   *sql.Tx
-	createVendorDataStmt *sql.Stmt
-	deleteVendorDataStmt *sql.Stmt
-	getVendorDataStmt    *sql.Stmt
-	updateVendorDataStmt *sql.Stmt
+	db                              DBTX
+	tx                              *sql.Tx
+	createInstanceStmt              *sql.Stmt
+	createInstanceLogStmt           *sql.Stmt
+	createOrUpdateInstanceStateStmt *sql.Stmt
+	createProfileStmt               *sql.Stmt
+	createVendorDataStmt            *sql.Stmt
+	deleteInstanceStmt              *sql.Stmt
+	deleteInstanceLogsStmt          *sql.Stmt
+	deleteInstanceStateStmt         *sql.Stmt
+	deleteOldInstanceLogsStmt       *sql.Stmt
+	deleteProfileStmt               *sql.Stmt
+	deleteVendorDataStmt            *sql.Stmt
+	getInstanceStmt                 *sql.Stmt
+	getInstanceByIDStmt             *sql.Stmt
+	getInstanceByIPStmt             *sql.Stmt
+	getInstanceLogsStmt             *sql.Stmt
+	getInstanceLogsByLevelStmt      *sql.Stmt
+	getInstanceLogsByTypeStmt       *sql.Stmt
+	getInstanceStateStmt            *sql.Stmt
+	getProfileStmt                  *sql.Stmt
+	getVendorDataStmt               *sql.Stmt
+	hardDeleteInstanceStmt          *sql.Stmt
+	listInstancesStmt               *sql.Stmt
+	listInstancesByProjectStmt      *sql.Stmt
+	listProfilesStmt                *sql.Stmt
+	listProfilesByProjectStmt       *sql.Stmt
+	updateInstanceStmt              *sql.Stmt
+	updateInstanceIPStmt            *sql.Stmt
+	updateProfileStmt               *sql.Stmt
+	updateVendorDataStmt            *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                   tx,
-		tx:                   tx,
-		createVendorDataStmt: q.createVendorDataStmt,
-		deleteVendorDataStmt: q.deleteVendorDataStmt,
-		getVendorDataStmt:    q.getVendorDataStmt,
-		updateVendorDataStmt: q.updateVendorDataStmt,
+		db:                              tx,
+		tx:                              tx,
+		createInstanceStmt:              q.createInstanceStmt,
+		createInstanceLogStmt:           q.createInstanceLogStmt,
+		createOrUpdateInstanceStateStmt: q.createOrUpdateInstanceStateStmt,
+		createProfileStmt:               q.createProfileStmt,
+		createVendorDataStmt:            q.createVendorDataStmt,
+		deleteInstanceStmt:              q.deleteInstanceStmt,
+		deleteInstanceLogsStmt:          q.deleteInstanceLogsStmt,
+		deleteInstanceStateStmt:         q.deleteInstanceStateStmt,
+		deleteOldInstanceLogsStmt:       q.deleteOldInstanceLogsStmt,
+		deleteProfileStmt:               q.deleteProfileStmt,
+		deleteVendorDataStmt:            q.deleteVendorDataStmt,
+		getInstanceStmt:                 q.getInstanceStmt,
+		getInstanceByIDStmt:             q.getInstanceByIDStmt,
+		getInstanceByIPStmt:             q.getInstanceByIPStmt,
+		getInstanceLogsStmt:             q.getInstanceLogsStmt,
+		getInstanceLogsByLevelStmt:      q.getInstanceLogsByLevelStmt,
+		getInstanceLogsByTypeStmt:       q.getInstanceLogsByTypeStmt,
+		getInstanceStateStmt:            q.getInstanceStateStmt,
+		getProfileStmt:                  q.getProfileStmt,
+		getVendorDataStmt:               q.getVendorDataStmt,
+		hardDeleteInstanceStmt:          q.hardDeleteInstanceStmt,
+		listInstancesStmt:               q.listInstancesStmt,
+		listInstancesByProjectStmt:      q.listInstancesByProjectStmt,
+		listProfilesStmt:                q.listProfilesStmt,
+		listProfilesByProjectStmt:       q.listProfilesByProjectStmt,
+		updateInstanceStmt:              q.updateInstanceStmt,
+		updateInstanceIPStmt:            q.updateInstanceIPStmt,
+		updateProfileStmt:               q.updateProfileStmt,
+		updateVendorDataStmt:            q.updateVendorDataStmt,
 	}
 }

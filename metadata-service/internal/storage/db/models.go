@@ -8,6 +8,42 @@ import (
 	"time"
 )
 
+type Instance struct {
+	ID        int64
+	Name      string
+	Project   string
+	IpAddress *string
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
+	DeletedAt *time.Time
+}
+
+type InstanceLog struct {
+	ID         int64
+	InstanceID int64
+	LogType    string
+	Level      string
+	Message    string
+	CreatedAt  *time.Time
+}
+
+type InstanceState struct {
+	ID         int64
+	InstanceID int64
+	Status     string
+	StatusCode int64
+	UpdatedAt  *time.Time
+}
+
+type Profile struct {
+	ID        int64
+	Name      string
+	Project   string
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
+	DeletedAt *time.Time
+}
+
 type VendorDatum struct {
 	ID          int64
 	Name        string

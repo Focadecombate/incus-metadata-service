@@ -10,6 +10,128 @@ import (
 	"time"
 )
 
+const createInstance = `-- name: CreateInstance :one
+INSERT INTO
+  instances (name, project, ip_address)
+VALUES
+  (?, ?, ?) RETURNING id, name, project, ip_address, created_at, updated_at, deleted_at
+`
+
+type CreateInstanceParams struct {
+	Name      string
+	Project   string
+	IpAddress *string
+}
+
+// ===== INSTANCES QUERIES =====
+func (q *Queries) CreateInstance(ctx context.Context, arg CreateInstanceParams) (Instance, error) {
+	row := q.queryRow(ctx, q.createInstanceStmt, createInstance, arg.Name, arg.Project, arg.IpAddress)
+	var i Instance
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Project,
+		&i.IpAddress,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const createInstanceLog = `-- name: CreateInstanceLog :one
+INSERT INTO
+  instance_logs (instance_id, log_type, level, message)
+VALUES
+  (?, ?, ?, ?) RETURNING id, instance_id, log_type, level, message, created_at
+`
+
+type CreateInstanceLogParams struct {
+	InstanceID int64
+	LogType    string
+	Level      string
+	Message    string
+}
+
+// ===== INSTANCE LOGS QUERIES =====
+func (q *Queries) CreateInstanceLog(ctx context.Context, arg CreateInstanceLogParams) (InstanceLog, error) {
+	row := q.queryRow(ctx, q.createInstanceLogStmt, createInstanceLog,
+		arg.InstanceID,
+		arg.LogType,
+		arg.Level,
+		arg.Message,
+	)
+	var i InstanceLog
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.LogType,
+		&i.Level,
+		&i.Message,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createOrUpdateInstanceState = `-- name: CreateOrUpdateInstanceState :one
+INSERT INTO
+  instance_state (instance_id, status, status_code, updated_at)
+VALUES
+  (?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(instance_id) DO
+UPDATE
+SET
+  status = excluded.status,
+  status_code = excluded.status_code,
+  updated_at = CURRENT_TIMESTAMP RETURNING id, instance_id, status, status_code, updated_at
+`
+
+type CreateOrUpdateInstanceStateParams struct {
+	InstanceID int64
+	Status     string
+	StatusCode int64
+}
+
+// ===== INSTANCE STATE QUERIES =====
+func (q *Queries) CreateOrUpdateInstanceState(ctx context.Context, arg CreateOrUpdateInstanceStateParams) (InstanceState, error) {
+	row := q.queryRow(ctx, q.createOrUpdateInstanceStateStmt, createOrUpdateInstanceState, arg.InstanceID, arg.Status, arg.StatusCode)
+	var i InstanceState
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.Status,
+		&i.StatusCode,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createProfile = `-- name: CreateProfile :one
+INSERT INTO
+  profiles (name, project)
+VALUES
+  (?, ?) RETURNING id, name, project, created_at, updated_at, deleted_at
+`
+
+type CreateProfileParams struct {
+	Name    string
+	Project string
+}
+
+// ===== PROFILES QUERIES =====
+func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (Profile, error) {
+	row := q.queryRow(ctx, q.createProfileStmt, createProfile, arg.Name, arg.Project)
+	var i Profile
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Project,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const createVendorData = `-- name: CreateVendorData :one
 INSERT INTO
   vendor_data (name, description, data)
@@ -38,6 +160,76 @@ func (q *Queries) CreateVendorData(ctx context.Context, arg CreateVendorDataPara
 	return i, err
 }
 
+const deleteInstance = `-- name: DeleteInstance :exec
+UPDATE
+  instances
+SET
+  deleted_at = CURRENT_TIMESTAMP
+WHERE
+  id = ?
+`
+
+func (q *Queries) DeleteInstance(ctx context.Context, id int64) error {
+	_, err := q.exec(ctx, q.deleteInstanceStmt, deleteInstance, id)
+	return err
+}
+
+const deleteInstanceLogs = `-- name: DeleteInstanceLogs :exec
+DELETE FROM
+  instance_logs
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) DeleteInstanceLogs(ctx context.Context, instanceID int64) error {
+	_, err := q.exec(ctx, q.deleteInstanceLogsStmt, deleteInstanceLogs, instanceID)
+	return err
+}
+
+const deleteInstanceState = `-- name: DeleteInstanceState :exec
+DELETE FROM
+  instance_state
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) DeleteInstanceState(ctx context.Context, instanceID int64) error {
+	_, err := q.exec(ctx, q.deleteInstanceStateStmt, deleteInstanceState, instanceID)
+	return err
+}
+
+const deleteOldInstanceLogs = `-- name: DeleteOldInstanceLogs :exec
+DELETE FROM
+  instance_logs
+WHERE
+  created_at < ?
+  AND instance_id = ?
+`
+
+type DeleteOldInstanceLogsParams struct {
+	CreatedAt  *time.Time
+	InstanceID int64
+}
+
+func (q *Queries) DeleteOldInstanceLogs(ctx context.Context, arg DeleteOldInstanceLogsParams) error {
+	_, err := q.exec(ctx, q.deleteOldInstanceLogsStmt, deleteOldInstanceLogs, arg.CreatedAt, arg.InstanceID)
+	return err
+}
+
+const deleteProfile = `-- name: DeleteProfile :exec
+UPDATE
+  profiles
+SET
+  deleted_at = CURRENT_TIMESTAMP
+WHERE
+  id = ?
+`
+
+func (q *Queries) DeleteProfile(ctx context.Context, id int64) error {
+	_, err := q.exec(ctx, q.deleteProfileStmt, deleteProfile, id)
+	return err
+}
+
 const deleteVendorData = `-- name: DeleteVendorData :exec
 UPDATE
   vendor_data
@@ -50,6 +242,300 @@ WHERE
 func (q *Queries) DeleteVendorData(ctx context.Context, id int64) error {
 	_, err := q.exec(ctx, q.deleteVendorDataStmt, deleteVendorData, id)
 	return err
+}
+
+const getInstance = `-- name: GetInstance :one
+SELECT
+  id, name, project, ip_address, created_at, updated_at, deleted_at
+FROM
+  instances
+WHERE
+  name = ?
+  AND project = ?
+  AND deleted_at IS NULL
+`
+
+type GetInstanceParams struct {
+	Name    string
+	Project string
+}
+
+func (q *Queries) GetInstance(ctx context.Context, arg GetInstanceParams) (Instance, error) {
+	row := q.queryRow(ctx, q.getInstanceStmt, getInstance, arg.Name, arg.Project)
+	var i Instance
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Project,
+		&i.IpAddress,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getInstanceByID = `-- name: GetInstanceByID :one
+SELECT
+  id, name, project, ip_address, created_at, updated_at, deleted_at
+FROM
+  instances
+WHERE
+  id = ?
+  AND deleted_at IS NULL
+`
+
+func (q *Queries) GetInstanceByID(ctx context.Context, id int64) (Instance, error) {
+	row := q.queryRow(ctx, q.getInstanceByIDStmt, getInstanceByID, id)
+	var i Instance
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Project,
+		&i.IpAddress,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getInstanceByIP = `-- name: GetInstanceByIP :one
+SELECT
+  id, name, project, ip_address, created_at, updated_at, deleted_at
+FROM
+  instances
+WHERE
+  ip_address = ?
+  AND deleted_at IS NULL
+`
+
+func (q *Queries) GetInstanceByIP(ctx context.Context, ipAddress *string) (Instance, error) {
+	row := q.queryRow(ctx, q.getInstanceByIPStmt, getInstanceByIP, ipAddress)
+	var i Instance
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Project,
+		&i.IpAddress,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getInstanceLogs = `-- name: GetInstanceLogs :many
+SELECT
+  id, instance_id, log_type, level, message, created_at
+FROM
+  instance_logs
+WHERE
+  instance_id = ?
+ORDER BY
+  created_at DESC
+LIMIT
+  ? OFFSET ?
+`
+
+type GetInstanceLogsParams struct {
+	InstanceID int64
+	Limit      int64
+	Offset     int64
+}
+
+func (q *Queries) GetInstanceLogs(ctx context.Context, arg GetInstanceLogsParams) ([]InstanceLog, error) {
+	rows, err := q.query(ctx, q.getInstanceLogsStmt, getInstanceLogs, arg.InstanceID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InstanceLog
+	for rows.Next() {
+		var i InstanceLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.InstanceID,
+			&i.LogType,
+			&i.Level,
+			&i.Message,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getInstanceLogsByLevel = `-- name: GetInstanceLogsByLevel :many
+SELECT
+  id, instance_id, log_type, level, message, created_at
+FROM
+  instance_logs
+WHERE
+  instance_id = ?
+  AND level = ?
+ORDER BY
+  created_at DESC
+LIMIT
+  ? OFFSET ?
+`
+
+type GetInstanceLogsByLevelParams struct {
+	InstanceID int64
+	Level      string
+	Limit      int64
+	Offset     int64
+}
+
+func (q *Queries) GetInstanceLogsByLevel(ctx context.Context, arg GetInstanceLogsByLevelParams) ([]InstanceLog, error) {
+	rows, err := q.query(ctx, q.getInstanceLogsByLevelStmt, getInstanceLogsByLevel,
+		arg.InstanceID,
+		arg.Level,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InstanceLog
+	for rows.Next() {
+		var i InstanceLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.InstanceID,
+			&i.LogType,
+			&i.Level,
+			&i.Message,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getInstanceLogsByType = `-- name: GetInstanceLogsByType :many
+SELECT
+  id, instance_id, log_type, level, message, created_at
+FROM
+  instance_logs
+WHERE
+  instance_id = ?
+  AND log_type = ?
+ORDER BY
+  created_at DESC
+LIMIT
+  ? OFFSET ?
+`
+
+type GetInstanceLogsByTypeParams struct {
+	InstanceID int64
+	LogType    string
+	Limit      int64
+	Offset     int64
+}
+
+func (q *Queries) GetInstanceLogsByType(ctx context.Context, arg GetInstanceLogsByTypeParams) ([]InstanceLog, error) {
+	rows, err := q.query(ctx, q.getInstanceLogsByTypeStmt, getInstanceLogsByType,
+		arg.InstanceID,
+		arg.LogType,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []InstanceLog
+	for rows.Next() {
+		var i InstanceLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.InstanceID,
+			&i.LogType,
+			&i.Level,
+			&i.Message,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getInstanceState = `-- name: GetInstanceState :one
+SELECT
+  id, instance_id, status, status_code, updated_at
+FROM
+  instance_state
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) GetInstanceState(ctx context.Context, instanceID int64) (InstanceState, error) {
+	row := q.queryRow(ctx, q.getInstanceStateStmt, getInstanceState, instanceID)
+	var i InstanceState
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.Status,
+		&i.StatusCode,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getProfile = `-- name: GetProfile :one
+SELECT
+  id, name, project, created_at, updated_at, deleted_at
+FROM
+  profiles
+WHERE
+  name = ?
+  AND project = ?
+  AND deleted_at IS NULL
+`
+
+type GetProfileParams struct {
+	Name    string
+	Project string
+}
+
+func (q *Queries) GetProfile(ctx context.Context, arg GetProfileParams) (Profile, error) {
+	row := q.queryRow(ctx, q.getProfileStmt, getProfile, arg.Name, arg.Project)
+	var i Profile
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Project,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const getVendorData = `-- name: GetVendorData :one
@@ -86,6 +572,259 @@ func (q *Queries) GetVendorData(ctx context.Context, name string) (GetVendorData
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Data,
+	)
+	return i, err
+}
+
+const hardDeleteInstance = `-- name: HardDeleteInstance :exec
+DELETE FROM
+  instances
+WHERE
+  id = ?
+`
+
+func (q *Queries) HardDeleteInstance(ctx context.Context, id int64) error {
+	_, err := q.exec(ctx, q.hardDeleteInstanceStmt, hardDeleteInstance, id)
+	return err
+}
+
+const listInstances = `-- name: ListInstances :many
+SELECT
+  id, name, project, ip_address, created_at, updated_at, deleted_at
+FROM
+  instances
+WHERE
+  deleted_at IS NULL
+ORDER BY
+  created_at DESC
+`
+
+func (q *Queries) ListInstances(ctx context.Context) ([]Instance, error) {
+	rows, err := q.query(ctx, q.listInstancesStmt, listInstances)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Instance
+	for rows.Next() {
+		var i Instance
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Project,
+			&i.IpAddress,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listInstancesByProject = `-- name: ListInstancesByProject :many
+SELECT
+  id, name, project, ip_address, created_at, updated_at, deleted_at
+FROM
+  instances
+WHERE
+  project = ?
+  AND deleted_at IS NULL
+ORDER BY
+  created_at DESC
+`
+
+func (q *Queries) ListInstancesByProject(ctx context.Context, project string) ([]Instance, error) {
+	rows, err := q.query(ctx, q.listInstancesByProjectStmt, listInstancesByProject, project)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Instance
+	for rows.Next() {
+		var i Instance
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Project,
+			&i.IpAddress,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProfiles = `-- name: ListProfiles :many
+SELECT
+  id, name, project, created_at, updated_at, deleted_at
+FROM
+  profiles
+WHERE
+  deleted_at IS NULL
+ORDER BY
+  created_at DESC
+`
+
+func (q *Queries) ListProfiles(ctx context.Context) ([]Profile, error) {
+	rows, err := q.query(ctx, q.listProfilesStmt, listProfiles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Profile
+	for rows.Next() {
+		var i Profile
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Project,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProfilesByProject = `-- name: ListProfilesByProject :many
+SELECT
+  id, name, project, created_at, updated_at, deleted_at
+FROM
+  profiles
+WHERE
+  project = ?
+  AND deleted_at IS NULL
+ORDER BY
+  created_at DESC
+`
+
+func (q *Queries) ListProfilesByProject(ctx context.Context, project string) ([]Profile, error) {
+	rows, err := q.query(ctx, q.listProfilesByProjectStmt, listProfilesByProject, project)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Profile
+	for rows.Next() {
+		var i Profile
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Project,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateInstance = `-- name: UpdateInstance :one
+UPDATE
+  instances
+SET
+  ip_address = ?,
+  updated_at = CURRENT_TIMESTAMP
+WHERE
+  id = ? RETURNING id, name, project, ip_address, created_at, updated_at, deleted_at
+`
+
+type UpdateInstanceParams struct {
+	IpAddress *string
+	ID        int64
+}
+
+func (q *Queries) UpdateInstance(ctx context.Context, arg UpdateInstanceParams) (Instance, error) {
+	row := q.queryRow(ctx, q.updateInstanceStmt, updateInstance, arg.IpAddress, arg.ID)
+	var i Instance
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Project,
+		&i.IpAddress,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateInstanceIP = `-- name: UpdateInstanceIP :exec
+UPDATE
+  instances
+SET
+  ip_address = ?,
+  updated_at = CURRENT_TIMESTAMP
+WHERE
+  id = ?
+`
+
+type UpdateInstanceIPParams struct {
+	IpAddress *string
+	ID        int64
+}
+
+func (q *Queries) UpdateInstanceIP(ctx context.Context, arg UpdateInstanceIPParams) error {
+	_, err := q.exec(ctx, q.updateInstanceIPStmt, updateInstanceIP, arg.IpAddress, arg.ID)
+	return err
+}
+
+const updateProfile = `-- name: UpdateProfile :one
+UPDATE
+  profiles
+SET
+  updated_at = CURRENT_TIMESTAMP
+WHERE
+  id = ? RETURNING id, name, project, created_at, updated_at, deleted_at
+`
+
+func (q *Queries) UpdateProfile(ctx context.Context, id int64) (Profile, error) {
+	row := q.queryRow(ctx, q.updateProfileStmt, updateProfile, id)
+	var i Profile
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Project,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }

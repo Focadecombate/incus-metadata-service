@@ -9,9 +9,38 @@ import (
 )
 
 type Querier interface {
+	// ===== INSTANCES QUERIES =====
+	CreateInstance(ctx context.Context, arg CreateInstanceParams) (Instance, error)
+	// ===== INSTANCE LOGS QUERIES =====
+	CreateInstanceLog(ctx context.Context, arg CreateInstanceLogParams) (InstanceLog, error)
+	// ===== INSTANCE STATE QUERIES =====
+	CreateOrUpdateInstanceState(ctx context.Context, arg CreateOrUpdateInstanceStateParams) (InstanceState, error)
+	// ===== PROFILES QUERIES =====
+	CreateProfile(ctx context.Context, arg CreateProfileParams) (Profile, error)
 	CreateVendorData(ctx context.Context, arg CreateVendorDataParams) (VendorDatum, error)
+	DeleteInstance(ctx context.Context, id int64) error
+	DeleteInstanceLogs(ctx context.Context, instanceID int64) error
+	DeleteInstanceState(ctx context.Context, instanceID int64) error
+	DeleteOldInstanceLogs(ctx context.Context, arg DeleteOldInstanceLogsParams) error
+	DeleteProfile(ctx context.Context, id int64) error
 	DeleteVendorData(ctx context.Context, id int64) error
+	GetInstance(ctx context.Context, arg GetInstanceParams) (Instance, error)
+	GetInstanceByID(ctx context.Context, id int64) (Instance, error)
+	GetInstanceByIP(ctx context.Context, ipAddress *string) (Instance, error)
+	GetInstanceLogs(ctx context.Context, arg GetInstanceLogsParams) ([]InstanceLog, error)
+	GetInstanceLogsByLevel(ctx context.Context, arg GetInstanceLogsByLevelParams) ([]InstanceLog, error)
+	GetInstanceLogsByType(ctx context.Context, arg GetInstanceLogsByTypeParams) ([]InstanceLog, error)
+	GetInstanceState(ctx context.Context, instanceID int64) (InstanceState, error)
+	GetProfile(ctx context.Context, arg GetProfileParams) (Profile, error)
 	GetVendorData(ctx context.Context, name string) (GetVendorDataRow, error)
+	HardDeleteInstance(ctx context.Context, id int64) error
+	ListInstances(ctx context.Context) ([]Instance, error)
+	ListInstancesByProject(ctx context.Context, project string) ([]Instance, error)
+	ListProfiles(ctx context.Context) ([]Profile, error)
+	ListProfilesByProject(ctx context.Context, project string) ([]Profile, error)
+	UpdateInstance(ctx context.Context, arg UpdateInstanceParams) (Instance, error)
+	UpdateInstanceIP(ctx context.Context, arg UpdateInstanceIPParams) error
+	UpdateProfile(ctx context.Context, id int64) (Profile, error)
 	UpdateVendorData(ctx context.Context, arg UpdateVendorDataParams) (VendorDatum, error)
 }
 

@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/api"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/config"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/incus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db"
 	"github.com/gin-gonic/gin"
@@ -26,10 +27,17 @@ func startServer() {
 		logs.Logger.Fatal().Err(err).Msg("Failed to connect to the database")
 	}
 
+	incusClient, err := incus.ConnectToIncus(cfg)
+
+	if err != nil {
+		logs.Logger.Fatal().Err(err).Msg("Failed to connect to Incus")
+	}
+
 	app := &api.App{
 		Config:   cfg,
 		Router:   gin.Default(),
 		Database: db,
+		Incus:    incusClient,
 	}
 
 	// Register public API routes

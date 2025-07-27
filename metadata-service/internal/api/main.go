@@ -6,12 +6,14 @@ import (
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/config"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db"
 	"github.com/gin-gonic/gin"
+	incus "github.com/lxc/incus/client"
 )
 
 type App struct {
 	Config   *config.Config
 	Router   *gin.Engine
 	Database *db.Queries
+	Incus    incus.InstanceServer
 }
 
 // SetupRouter initializes the Gin router with the necessary routes for the metadata service.

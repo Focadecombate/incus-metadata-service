@@ -2,7 +2,6 @@ package internal_routes
 
 import (
 	"bytes"
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -12,39 +11,15 @@ import (
 
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/config"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-// MockQuerier is a mock implementation of the db.Querier interface
-type MockQuerier struct {
-	mock.Mock
-}
-
-func (m *MockQuerier) CreateVendorData(ctx context.Context, arg db.CreateVendorDataParams) (db.VendorDatum, error) {
-	args := m.Called(ctx, arg)
-	return args.Get(0).(db.VendorDatum), args.Error(1)
-}
-
-func (m *MockQuerier) DeleteVendorData(ctx context.Context, id int64) error {
-	args := m.Called(ctx, id)
-	return args.Error(0)
-}
-
-func (m *MockQuerier) GetVendorData(ctx context.Context, name string) (db.GetVendorDataRow, error) {
-	args := m.Called(ctx, name)
-	return args.Get(0).(db.GetVendorDataRow), args.Error(1)
-}
-
-func (m *MockQuerier) UpdateVendorData(ctx context.Context, arg db.UpdateVendorDataParams) (db.VendorDatum, error) {
-	args := m.Called(ctx, arg)
-	return args.Get(0).(db.VendorDatum), args.Error(1)
-}
-
 // Helper function to create a test handler with mock database
-func setupTestHandler() (*Handler, *MockQuerier) {
-	mockDB := &MockQuerier{}
+func setupTestHandler() (*Handler, *mocks.MockQuerier) {
+	mockDB := &mocks.MockQuerier{}
 	handler := &Handler{
 		Config:   &config.Config{},
 		Database: mockDB,

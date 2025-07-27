@@ -32,3 +32,6 @@ metadata.db
 # Editor/IDE
 # .idea/
 # .vscode/
+
+certs
+.DS_Store

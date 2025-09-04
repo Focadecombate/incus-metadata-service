@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
+
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/api"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/config"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/events"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/incus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db"
@@ -38,6 +41,38 @@ func startServer() {
 		Router:   gin.Default(),
 		Database: db,
 		Incus:    incusClient,
+	}
+	
+	// Initialize event manager
+	eventManager, err := events.NewEventManager(app, nil)
+	if err != nil {
+		logs.Logger.Fatal().Err(err).Msg("Failed to create event manager")
+	}
+	defer func() {
+		if err := eventManager.Close(context.Background()); err != nil {
+			logs.Logger.Error().Err(err).Msg("Failed to close event manager")
+		}
+	}()
+
+	// Initialize cron manager
+	cronManager, err := events.NewCronManager(app, nil)
+	if err != nil {
+		logs.Logger.Fatal().Err(err).Msg("Failed to create cron manager")
+	}
+
+	// Start cron scheduler
+	if err := cronManager.Start(); err != nil {
+		logs.Logger.Fatal().Err(err).Msg("Failed to start cron scheduler")
+	}
+	defer func() {
+		if err := cronManager.Stop(); err != nil {
+			logs.Logger.Error().Err(err).Msg("Failed to stop cron scheduler")
+		}
+	}()
+
+	// Add cron jobs
+	if err := cronManager.AddJobs(); err != nil {
+		logs.Logger.Fatal().Err(err).Msg("Failed to add cron jobs")
 	}
 
 	// Register public API routes

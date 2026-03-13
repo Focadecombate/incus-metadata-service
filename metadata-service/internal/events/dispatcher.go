@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Raezil/GoEventBus"
@@ -17,6 +18,7 @@ import (
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"gopkg.in/yaml.v3"
 )
 
 // Event projection constants
@@ -362,6 +364,7 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 		LocalHostname: instance.Name,
 		LocalIPv4:     primaryIPv4,
 		LocalIPv6:     primaryIPv6,
+		PublicKeys:    extractSSHKeys(instance.Config),
 		Placement: types.Placement{
 			Project: instance.Project,
 			HostID:  instance.Location,
@@ -409,40 +412,78 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 		}
 	}
 
-	// Build and store network config (netplan v2 format)
-	ethernets := make(map[string]types.Ethernet)
-	for _, iface := range ifaces {
-		var addresses []string
-		if iface.IPv4 != "" {
-			addr := iface.IPv4
-			if iface.Netmask != "" {
-				addr = fmt.Sprintf("%s/%s", iface.IPv4, iface.Netmask)
+	// Build and store vendor data from cloud-init config
+	vendorData := instance.Config["cloud-init.vendor-data"]
+	if vendorData == "" {
+		vendorData = instance.Config["user.vendor-data"]
+	}
+	if vendorData != "" {
+		if err := em.applyWrite(consensus.CmdCreateOrUpdateVendorData, db.CreateOrUpdateInstanceVendorDataParams{
+			InstanceID: dbInstance.ID,
+			VendorData: vendorData,
+		}); err != nil {
+			handlerLogger.Error().Err(err).Msg("Failed to store instance vendor data")
+			return GoEventBus.Result{
+				Message: "Failed to store instance vendor data",
+			}, fmt.Errorf("failed to store instance vendor data: %w", err)
+		}
+	}
+
+	// Build and store network config
+	// Prefer user-defined cloud-init.network-config from Incus config over auto-generated
+	var networkConfigBytes []byte
+	if cfgNetworkConfig := instance.Config["cloud-init.network-config"]; cfgNetworkConfig != "" {
+		// Parse user-defined network config YAML into the NetworkConfig struct
+		var userNetworkConfig types.NetworkConfig
+		if err := yaml.Unmarshal([]byte(cfgNetworkConfig), &userNetworkConfig); err == nil && userNetworkConfig.Version > 0 {
+			networkConfigBytes, err = json.Marshal(userNetworkConfig)
+			if err != nil {
+				handlerLogger.Error().Err(err).Msg("Failed to marshal user-defined network config")
 			}
-			addresses = append(addresses, addr)
 		}
-		if iface.IPv6 != "" {
-			addresses = append(addresses, iface.IPv6)
-		}
-
-		ethernets[iface.Name] = types.Ethernet{
-			Match: types.Match{
-				MacAddress: iface.Hwaddr,
-			},
-			Addresses: addresses,
+		if networkConfigBytes == nil {
+			// Could not parse as v2 struct, store as raw string
+			handlerLogger.Warn().Msg("Could not parse cloud-init.network-config as v2 format, using auto-generated")
 		}
 	}
 
-	networkConfig := types.NetworkConfig{
-		Version:   2,
-		Ethernets: ethernets,
-	}
+	if networkConfigBytes == nil {
+		// Auto-generate network config from runtime state (netplan v2 format)
+		ethernets := make(map[string]types.Ethernet)
+		for _, iface := range ifaces {
+			var addresses []string
+			if iface.IPv4 != "" {
+				addr := iface.IPv4
+				if iface.Netmask != "" {
+					addr = fmt.Sprintf("%s/%s", iface.IPv4, iface.Netmask)
+				}
+				addresses = append(addresses, addr)
+			}
+			if iface.IPv6 != "" {
+				addresses = append(addresses, iface.IPv6)
+			}
 
-	networkConfigBytes, err := json.Marshal(networkConfig)
-	if err != nil {
-		handlerLogger.Error().Err(err).Msg("Failed to marshal network config")
-		return GoEventBus.Result{
-			Message: "Failed to marshal network config",
-		}, fmt.Errorf("failed to marshal network config: %w", err)
+			ethernets[iface.Name] = types.Ethernet{
+				Match: types.Match{
+					MacAddress: iface.Hwaddr,
+				},
+				Addresses: addresses,
+			}
+		}
+
+		networkConfig := types.NetworkConfig{
+			Version:   2,
+			Ethernets: ethernets,
+		}
+
+		var err error
+		networkConfigBytes, err = json.Marshal(networkConfig)
+		if err != nil {
+			handlerLogger.Error().Err(err).Msg("Failed to marshal network config")
+			return GoEventBus.Result{
+				Message: "Failed to marshal network config",
+			}, fmt.Errorf("failed to marshal network config: %w", err)
+		}
 	}
 
 	if err := em.applyWrite(consensus.CmdCreateOrUpdateNetworkConfig, db.CreateOrUpdateInstanceNetworkConfigParams{
@@ -505,9 +546,40 @@ func (em *EventManager) applyWrite(cmdType consensus.CommandType, params any) er
 	case consensus.CmdCreateOrUpdateState:
 		_, err := em.app.Database.CreateOrUpdateInstanceState(ctx, params.(db.CreateOrUpdateInstanceStateParams))
 		return err
+	case consensus.CmdCreateOrUpdateVendorData:
+		_, err := em.app.Database.CreateOrUpdateInstanceVendorData(ctx, params.(db.CreateOrUpdateInstanceVendorDataParams))
+		return err
 	default:
 		return fmt.Errorf("unknown command type: %d", cmdType)
 	}
+}
+
+// extractSSHKeys extracts SSH public keys from the Incus instance config.
+// It checks user.meta-data (YAML with public-keys) and user.ssh-keys (newline-separated).
+func extractSSHKeys(config map[string]string) []string {
+	var keys []string
+
+	// Check user.meta-data for public-keys field
+	if metaData := config["user.meta-data"]; metaData != "" {
+		var parsed struct {
+			PublicKeys []string `yaml:"public-keys"`
+		}
+		if err := yaml.Unmarshal([]byte(metaData), &parsed); err == nil && len(parsed.PublicKeys) > 0 {
+			keys = append(keys, parsed.PublicKeys...)
+		}
+	}
+
+	// Check user.ssh-keys (newline-separated list of SSH public keys)
+	if sshKeys := config["user.ssh-keys"]; sshKeys != "" {
+		for _, key := range strings.Split(sshKeys, "\n") {
+			key = strings.TrimSpace(key)
+			if key != "" {
+				keys = append(keys, key)
+			}
+		}
+	}
+
+	return keys
 }
 
 // strPtrOrNil returns a pointer to s if non-empty, otherwise nil.

@@ -192,6 +192,35 @@ func (q *Queries) CreateOrUpdateInstanceUserData(ctx context.Context, arg Create
 	return i, err
 }
 
+const createOrUpdateInstanceVendorData = `-- name: CreateOrUpdateInstanceVendorData :one
+INSERT INTO
+  instance_vendor_data (instance_id, vendor_data)
+VALUES
+  (?, ?) ON CONFLICT(instance_id) DO
+UPDATE
+SET
+  vendor_data = excluded.vendor_data,
+  updated_at = CURRENT_TIMESTAMP RETURNING id, instance_id, vendor_data, updated_at
+`
+
+type CreateOrUpdateInstanceVendorDataParams struct {
+	InstanceID int64
+	VendorData interface{}
+}
+
+// ===== INSTANCE VENDOR DATA QUERIES =====
+func (q *Queries) CreateOrUpdateInstanceVendorData(ctx context.Context, arg CreateOrUpdateInstanceVendorDataParams) (InstanceVendorDatum, error) {
+	row := q.queryRow(ctx, q.createOrUpdateInstanceVendorDataStmt, createOrUpdateInstanceVendorData, arg.InstanceID, arg.VendorData)
+	var i InstanceVendorDatum
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.VendorData,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createProfile = `-- name: CreateProfile :one
 INSERT INTO
   profiles (name, project)
@@ -318,6 +347,18 @@ WHERE
 
 func (q *Queries) DeleteInstanceUserData(ctx context.Context, instanceID int64) error {
 	_, err := q.exec(ctx, q.deleteInstanceUserDataStmt, deleteInstanceUserData, instanceID)
+	return err
+}
+
+const deleteInstanceVendorData = `-- name: DeleteInstanceVendorData :exec
+DELETE FROM
+  instance_vendor_data
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) DeleteInstanceVendorData(ctx context.Context, instanceID int64) error {
+	_, err := q.exec(ctx, q.deleteInstanceVendorDataStmt, deleteInstanceVendorData, instanceID)
 	return err
 }
 
@@ -758,6 +799,50 @@ func (q *Queries) GetInstanceUserDataByIP(ctx context.Context, ipAddress *string
 		&i.ID,
 		&i.InstanceID,
 		&i.UserData,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getInstanceVendorData = `-- name: GetInstanceVendorData :one
+SELECT
+  id, instance_id, vendor_data, updated_at
+FROM
+  instance_vendor_data
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) GetInstanceVendorData(ctx context.Context, instanceID int64) (InstanceVendorDatum, error) {
+	row := q.queryRow(ctx, q.getInstanceVendorDataStmt, getInstanceVendorData, instanceID)
+	var i InstanceVendorDatum
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.VendorData,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getInstanceVendorDataByIP = `-- name: GetInstanceVendorDataByIP :one
+SELECT
+  ivd.id, ivd.instance_id, ivd.vendor_data, ivd.updated_at
+FROM
+  instance_vendor_data ivd
+  JOIN instances i ON ivd.instance_id = i.id
+WHERE
+  i.ip_address = ?
+  AND i.deleted_at IS NULL
+`
+
+func (q *Queries) GetInstanceVendorDataByIP(ctx context.Context, ipAddress *string) (InstanceVendorDatum, error) {
+	row := q.queryRow(ctx, q.getInstanceVendorDataByIPStmt, getInstanceVendorDataByIP, ipAddress)
+	var i InstanceVendorDatum
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.VendorData,
 		&i.UpdatedAt,
 	)
 	return i, err

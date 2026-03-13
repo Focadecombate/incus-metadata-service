@@ -173,6 +173,27 @@ func (m *MockQuerier) DeleteInstanceUserData(ctx context.Context, instanceID int
 	return args.Error(0)
 }
 
+// Instance vendor data methods
+func (m *MockQuerier) CreateOrUpdateInstanceVendorData(ctx context.Context, arg db.CreateOrUpdateInstanceVendorDataParams) (db.InstanceVendorDatum, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).(db.InstanceVendorDatum), args.Error(1)
+}
+
+func (m *MockQuerier) GetInstanceVendorData(ctx context.Context, instanceID int64) (db.InstanceVendorDatum, error) {
+	args := m.Called(ctx, instanceID)
+	return args.Get(0).(db.InstanceVendorDatum), args.Error(1)
+}
+
+func (m *MockQuerier) GetInstanceVendorDataByIP(ctx context.Context, ipAddress *string) (db.InstanceVendorDatum, error) {
+	args := m.Called(ctx, ipAddress)
+	return args.Get(0).(db.InstanceVendorDatum), args.Error(1)
+}
+
+func (m *MockQuerier) DeleteInstanceVendorData(ctx context.Context, instanceID int64) error {
+	args := m.Called(ctx, instanceID)
+	return args.Error(0)
+}
+
 // Instance network config methods
 func (m *MockQuerier) CreateOrUpdateInstanceNetworkConfig(ctx context.Context, arg db.CreateOrUpdateInstanceNetworkConfigParams) (db.InstanceNetworkConfig, error) {
 	args := m.Called(ctx, arg)

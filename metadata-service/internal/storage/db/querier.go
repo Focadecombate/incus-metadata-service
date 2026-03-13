@@ -21,6 +21,8 @@ type Querier interface {
 	CreateOrUpdateInstanceState(ctx context.Context, arg CreateOrUpdateInstanceStateParams) (InstanceState, error)
 	// ===== INSTANCE USER DATA QUERIES =====
 	CreateOrUpdateInstanceUserData(ctx context.Context, arg CreateOrUpdateInstanceUserDataParams) (InstanceUserDatum, error)
+	// ===== INSTANCE VENDOR DATA QUERIES =====
+	CreateOrUpdateInstanceVendorData(ctx context.Context, arg CreateOrUpdateInstanceVendorDataParams) (InstanceVendorDatum, error)
 	// ===== PROFILES QUERIES =====
 	CreateProfile(ctx context.Context, arg CreateProfileParams) (Profile, error)
 	CreateVendorData(ctx context.Context, arg CreateVendorDataParams) (VendorDatum, error)
@@ -30,6 +32,7 @@ type Querier interface {
 	DeleteInstanceNetworkConfig(ctx context.Context, instanceID int64) error
 	DeleteInstanceState(ctx context.Context, instanceID int64) error
 	DeleteInstanceUserData(ctx context.Context, instanceID int64) error
+	DeleteInstanceVendorData(ctx context.Context, instanceID int64) error
 	DeleteOldInstanceLogs(ctx context.Context, arg DeleteOldInstanceLogsParams) error
 	DeleteProfile(ctx context.Context, id int64) error
 	DeleteVendorData(ctx context.Context, id int64) error
@@ -46,6 +49,8 @@ type Querier interface {
 	GetInstanceState(ctx context.Context, instanceID int64) (InstanceState, error)
 	GetInstanceUserData(ctx context.Context, instanceID int64) (InstanceUserDatum, error)
 	GetInstanceUserDataByIP(ctx context.Context, ipAddress *string) (InstanceUserDatum, error)
+	GetInstanceVendorData(ctx context.Context, instanceID int64) (InstanceVendorDatum, error)
+	GetInstanceVendorDataByIP(ctx context.Context, ipAddress *string) (InstanceVendorDatum, error)
 	GetProfile(ctx context.Context, arg GetProfileParams) (Profile, error)
 	GetVendorData(ctx context.Context, name string) (GetVendorDataRow, error)
 	HardDeleteInstance(ctx context.Context, id int64) error

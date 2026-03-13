@@ -42,6 +42,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createOrUpdateInstanceUserDataStmt, err = db.PrepareContext(ctx, createOrUpdateInstanceUserData); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateOrUpdateInstanceUserData: %w", err)
 	}
+	if q.createOrUpdateInstanceVendorDataStmt, err = db.PrepareContext(ctx, createOrUpdateInstanceVendorData); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateOrUpdateInstanceVendorData: %w", err)
+	}
 	if q.createProfileStmt, err = db.PrepareContext(ctx, createProfile); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateProfile: %w", err)
 	}
@@ -65,6 +68,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.deleteInstanceUserDataStmt, err = db.PrepareContext(ctx, deleteInstanceUserData); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteInstanceUserData: %w", err)
+	}
+	if q.deleteInstanceVendorDataStmt, err = db.PrepareContext(ctx, deleteInstanceVendorData); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteInstanceVendorData: %w", err)
 	}
 	if q.deleteOldInstanceLogsStmt, err = db.PrepareContext(ctx, deleteOldInstanceLogs); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteOldInstanceLogs: %w", err)
@@ -113,6 +119,12 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.getInstanceUserDataByIPStmt, err = db.PrepareContext(ctx, getInstanceUserDataByIP); err != nil {
 		return nil, fmt.Errorf("error preparing query GetInstanceUserDataByIP: %w", err)
+	}
+	if q.getInstanceVendorDataStmt, err = db.PrepareContext(ctx, getInstanceVendorData); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceVendorData: %w", err)
+	}
+	if q.getInstanceVendorDataByIPStmt, err = db.PrepareContext(ctx, getInstanceVendorDataByIP); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceVendorDataByIP: %w", err)
 	}
 	if q.getProfileStmt, err = db.PrepareContext(ctx, getProfile); err != nil {
 		return nil, fmt.Errorf("error preparing query GetProfile: %w", err)
@@ -182,6 +194,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createOrUpdateInstanceUserDataStmt: %w", cerr)
 		}
 	}
+	if q.createOrUpdateInstanceVendorDataStmt != nil {
+		if cerr := q.createOrUpdateInstanceVendorDataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createOrUpdateInstanceVendorDataStmt: %w", cerr)
+		}
+	}
 	if q.createProfileStmt != nil {
 		if cerr := q.createProfileStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createProfileStmt: %w", cerr)
@@ -220,6 +237,11 @@ func (q *Queries) Close() error {
 	if q.deleteInstanceUserDataStmt != nil {
 		if cerr := q.deleteInstanceUserDataStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteInstanceUserDataStmt: %w", cerr)
+		}
+	}
+	if q.deleteInstanceVendorDataStmt != nil {
+		if cerr := q.deleteInstanceVendorDataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteInstanceVendorDataStmt: %w", cerr)
 		}
 	}
 	if q.deleteOldInstanceLogsStmt != nil {
@@ -300,6 +322,16 @@ func (q *Queries) Close() error {
 	if q.getInstanceUserDataByIPStmt != nil {
 		if cerr := q.getInstanceUserDataByIPStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getInstanceUserDataByIPStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceVendorDataStmt != nil {
+		if cerr := q.getInstanceVendorDataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceVendorDataStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceVendorDataByIPStmt != nil {
+		if cerr := q.getInstanceVendorDataByIPStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceVendorDataByIPStmt: %w", cerr)
 		}
 	}
 	if q.getProfileStmt != nil {
@@ -402,6 +434,7 @@ type Queries struct {
 	createOrUpdateInstanceNetworkConfigStmt *sql.Stmt
 	createOrUpdateInstanceStateStmt         *sql.Stmt
 	createOrUpdateInstanceUserDataStmt      *sql.Stmt
+	createOrUpdateInstanceVendorDataStmt    *sql.Stmt
 	createProfileStmt                       *sql.Stmt
 	createVendorDataStmt                    *sql.Stmt
 	deleteInstanceStmt                      *sql.Stmt
@@ -410,6 +443,7 @@ type Queries struct {
 	deleteInstanceNetworkConfigStmt         *sql.Stmt
 	deleteInstanceStateStmt                 *sql.Stmt
 	deleteInstanceUserDataStmt              *sql.Stmt
+	deleteInstanceVendorDataStmt            *sql.Stmt
 	deleteOldInstanceLogsStmt               *sql.Stmt
 	deleteProfileStmt                       *sql.Stmt
 	deleteVendorDataStmt                    *sql.Stmt
@@ -426,6 +460,8 @@ type Queries struct {
 	getInstanceStateStmt                    *sql.Stmt
 	getInstanceUserDataStmt                 *sql.Stmt
 	getInstanceUserDataByIPStmt             *sql.Stmt
+	getInstanceVendorDataStmt               *sql.Stmt
+	getInstanceVendorDataByIPStmt           *sql.Stmt
 	getProfileStmt                          *sql.Stmt
 	getVendorDataStmt                       *sql.Stmt
 	hardDeleteInstanceStmt                  *sql.Stmt
@@ -449,6 +485,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		createOrUpdateInstanceNetworkConfigStmt: q.createOrUpdateInstanceNetworkConfigStmt,
 		createOrUpdateInstanceStateStmt:         q.createOrUpdateInstanceStateStmt,
 		createOrUpdateInstanceUserDataStmt:      q.createOrUpdateInstanceUserDataStmt,
+		createOrUpdateInstanceVendorDataStmt:    q.createOrUpdateInstanceVendorDataStmt,
 		createProfileStmt:                       q.createProfileStmt,
 		createVendorDataStmt:                    q.createVendorDataStmt,
 		deleteInstanceStmt:                      q.deleteInstanceStmt,
@@ -457,6 +494,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		deleteInstanceNetworkConfigStmt:         q.deleteInstanceNetworkConfigStmt,
 		deleteInstanceStateStmt:                 q.deleteInstanceStateStmt,
 		deleteInstanceUserDataStmt:              q.deleteInstanceUserDataStmt,
+		deleteInstanceVendorDataStmt:            q.deleteInstanceVendorDataStmt,
 		deleteOldInstanceLogsStmt:               q.deleteOldInstanceLogsStmt,
 		deleteProfileStmt:                       q.deleteProfileStmt,
 		deleteVendorDataStmt:                    q.deleteVendorDataStmt,
@@ -473,6 +511,8 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getInstanceStateStmt:                    q.getInstanceStateStmt,
 		getInstanceUserDataStmt:                 q.getInstanceUserDataStmt,
 		getInstanceUserDataByIPStmt:             q.getInstanceUserDataByIPStmt,
+		getInstanceVendorDataStmt:               q.getInstanceVendorDataStmt,
+		getInstanceVendorDataByIPStmt:           q.getInstanceVendorDataByIPStmt,
 		getProfileStmt:                          q.getProfileStmt,
 		getVendorDataStmt:                       q.getVendorDataStmt,
 		hardDeleteInstanceStmt:                  q.hardDeleteInstanceStmt,

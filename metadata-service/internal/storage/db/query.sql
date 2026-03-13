@@ -332,6 +332,41 @@ DELETE FROM
 WHERE
   instance_id = ?;
 
+-- ===== INSTANCE VENDOR DATA QUERIES =====
+-- name: CreateOrUpdateInstanceVendorData :one
+INSERT INTO
+  instance_vendor_data (instance_id, vendor_data)
+VALUES
+  (?, ?) ON CONFLICT(instance_id) DO
+UPDATE
+SET
+  vendor_data = excluded.vendor_data,
+  updated_at = CURRENT_TIMESTAMP RETURNING *;
+
+-- name: GetInstanceVendorData :one
+SELECT
+  *
+FROM
+  instance_vendor_data
+WHERE
+  instance_id = ?;
+
+-- name: GetInstanceVendorDataByIP :one
+SELECT
+  ivd.*
+FROM
+  instance_vendor_data ivd
+  JOIN instances i ON ivd.instance_id = i.id
+WHERE
+  i.ip_address = ?
+  AND i.deleted_at IS NULL;
+
+-- name: DeleteInstanceVendorData :exec
+DELETE FROM
+  instance_vendor_data
+WHERE
+  instance_id = ?;
+
 -- ===== INSTANCE NETWORK CONFIG QUERIES =====
 -- name: CreateOrUpdateInstanceNetworkConfig :one
 INSERT INTO

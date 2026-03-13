@@ -87,6 +87,15 @@ CREATE TABLE IF NOT EXISTS instance_network_config (
   FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
 );
 
+-- Instance vendor data table for cloud-init vendor data (per-instance from Incus config)
+CREATE TABLE IF NOT EXISTS instance_vendor_data (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  instance_id INTEGER NOT NULL UNIQUE,
+  vendor_data JSONB NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
+);
+
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_instances_name ON instances(name);
 CREATE INDEX IF NOT EXISTS idx_instances_project ON instances(project);
@@ -109,3 +118,4 @@ CREATE INDEX IF NOT EXISTS idx_profiles_deleted_at ON profiles(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_instance_metadata_instance_id ON instance_metadata(instance_id);
 CREATE INDEX IF NOT EXISTS idx_instance_user_data_instance_id ON instance_user_data(instance_id);
 CREATE INDEX IF NOT EXISTS idx_instance_network_config_instance_id ON instance_network_config(instance_id);
+CREATE INDEX IF NOT EXISTS idx_instance_vendor_data_instance_id ON instance_vendor_data(instance_id);

@@ -56,6 +56,13 @@ type InstanceUserDatum struct {
 	UpdatedAt  *time.Time
 }
 
+type InstanceVendorDatum struct {
+	ID         int64
+	InstanceID int64
+	VendorData interface{}
+	UpdatedAt  *time.Time
+}
+
 type Profile struct {
 	ID        int64
 	Name      string

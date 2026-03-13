@@ -100,6 +100,6 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.38.2
 )

@@ -99,6 +99,17 @@ func (f *FSM) Apply(log *raft.Log) interface{} {
 		}
 		return result
 
+	case CmdCreateOrUpdateVendorData:
+		var params db.CreateOrUpdateInstanceVendorDataParams
+		if err := json.Unmarshal(cmd.Data, &params); err != nil {
+			return err
+		}
+		result, err := f.db.CreateOrUpdateInstanceVendorData(ctx, params)
+		if err != nil {
+			return err
+		}
+		return result
+
 	default:
 		return fmt.Errorf("unknown command type: %d", cmd.Type)
 	}

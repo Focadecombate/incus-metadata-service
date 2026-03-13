@@ -12,6 +12,7 @@ const (
 	CmdCreateOrUpdateUserData
 	CmdCreateOrUpdateNetworkConfig
 	CmdCreateOrUpdateState
+	CmdCreateOrUpdateVendorData
 )
 
 // Command represents a write operation to be replicated via RAFT.

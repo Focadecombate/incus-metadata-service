@@ -25,6 +25,22 @@ type DatabaseConfig struct {
 	DBSource string `env:"DB_SOURCE,default=metadata.db"`
 }
 
+// RaftConfig holds the configuration for RAFT consensus.
+type RaftConfig struct {
+	// Enabled activates RAFT consensus mode. When false, the service runs standalone.
+	Enabled bool `env:"ENABLED,default=false"`
+	// NodeID is a unique identifier for this node in the cluster.
+	NodeID string `env:"NODE_ID,default=node1"`
+	// BindAddr is the address for RAFT inter-node communication.
+	BindAddr string `env:"BIND_ADDR,default=localhost:7000"`
+	// DataDir is the directory for RAFT log and snapshot storage.
+	DataDir string `env:"DATA_DIR,default=raft-data"`
+	// Peers is a comma-separated list of peer addresses.
+	Peers []string `env:"PEERS,delimiter=,"`
+	// Bootstrap indicates whether this node should bootstrap a new cluster.
+	Bootstrap bool `env:"BOOTSTRAP,default=false"`
+}
+
 // Config holds the configuration for the metadata service.
 type Config struct {
 	// Port is the port on which the metadata service will run.
@@ -35,6 +51,8 @@ type Config struct {
 	Incus *IncusConfig `env:",prefix=INCUS_CONFIG_"`
 	// Database contains the configuration for connecting to the database.
 	Database *DatabaseConfig `env:",prefix=DATABASE_CONFIG_"`
+	// Raft contains the configuration for RAFT consensus.
+	Raft *RaftConfig `env:",prefix=RAFT_"`
 }
 
 func LoadConfig() (*Config, error) {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/Raezil/GoEventBus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/api"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/consensus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/pkg/types"
@@ -259,24 +260,35 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 
 	if err != nil {
 		handlerLogger.Info().Err(err).Msg("Instance not found in database, creating new instance")
-		dbInstance, err = em.app.Database.CreateInstance(ctx, db.CreateInstanceParams{
+		createParams := db.CreateInstanceParams{
 			Name:      instance.Name,
 			Project:   instance.Project,
 			IpAddress: strPtrOrNil(primaryIPv4),
-		})
-		if err != nil {
+		}
+		if err := em.applyWrite(consensus.CmdCreateInstance, createParams); err != nil {
 			handlerLogger.Error().Err(err).Msg("Failed to create instance in database")
 			return GoEventBus.Result{
 				Message: "Failed to create instance in database",
 			}, fmt.Errorf("failed to create instance in database: %w", err)
 		}
-	} else {
-		// Instance exists, update its IP address
-		dbInstance, err = em.app.Database.UpdateInstance(ctx, db.UpdateInstanceParams{
-			ID:        dbInstance.ID,
-			IpAddress: strPtrOrNil(primaryIPv4),
+		// Re-fetch the instance to get the ID
+		dbInstance, err = em.app.Database.GetInstance(ctx, db.GetInstanceParams{
+			Name:    instance.Name,
+			Project: instance.Project,
 		})
 		if err != nil {
+			handlerLogger.Error().Err(err).Msg("Failed to fetch created instance")
+			return GoEventBus.Result{
+				Message: "Failed to fetch created instance",
+			}, fmt.Errorf("failed to fetch created instance: %w", err)
+		}
+	} else {
+		// Instance exists, update its IP address
+		updateParams := db.UpdateInstanceParams{
+			ID:        dbInstance.ID,
+			IpAddress: strPtrOrNil(primaryIPv4),
+		}
+		if err := em.applyWrite(consensus.CmdUpdateInstance, updateParams); err != nil {
 			handlerLogger.Error().Err(err).Msg("Failed to update instance in database")
 			return GoEventBus.Result{
 				Message: "Failed to update instance in database",
@@ -325,11 +337,10 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 		}, fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	_, err = em.app.Database.CreateOrUpdateInstanceMetadata(ctx, db.CreateOrUpdateInstanceMetadataParams{
+	if err := em.applyWrite(consensus.CmdCreateOrUpdateMetadata, db.CreateOrUpdateInstanceMetadataParams{
 		InstanceID: dbInstance.ID,
 		Metadata:   metadataBytes,
-	})
-	if err != nil {
+	}); err != nil {
 		handlerLogger.Error().Err(err).Msg("Failed to store instance metadata")
 		return GoEventBus.Result{
 			Message: "Failed to store instance metadata",
@@ -343,11 +354,10 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 		userData = instance.Config["user.user-data"]
 	}
 	if userData != "" {
-		_, err = em.app.Database.CreateOrUpdateInstanceUserData(ctx, db.CreateOrUpdateInstanceUserDataParams{
+		if err := em.applyWrite(consensus.CmdCreateOrUpdateUserData, db.CreateOrUpdateInstanceUserDataParams{
 			InstanceID: dbInstance.ID,
 			UserData:   userData,
-		})
-		if err != nil {
+		}); err != nil {
 			handlerLogger.Error().Err(err).Msg("Failed to store instance user data")
 			return GoEventBus.Result{
 				Message: "Failed to store instance user data",
@@ -391,11 +401,10 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 		}, fmt.Errorf("failed to marshal network config: %w", err)
 	}
 
-	_, err = em.app.Database.CreateOrUpdateInstanceNetworkConfig(ctx, db.CreateOrUpdateInstanceNetworkConfigParams{
+	if err := em.applyWrite(consensus.CmdCreateOrUpdateNetworkConfig, db.CreateOrUpdateInstanceNetworkConfigParams{
 		InstanceID:    dbInstance.ID,
 		NetworkConfig: networkConfigBytes,
-	})
-	if err != nil {
+	}); err != nil {
 		handlerLogger.Error().Err(err).Msg("Failed to store instance network config")
 		return GoEventBus.Result{
 			Message: "Failed to store instance network config",
@@ -404,12 +413,11 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 
 	// Update instance state
 	if instance.State != nil {
-		_, err = em.app.Database.CreateOrUpdateInstanceState(ctx, db.CreateOrUpdateInstanceStateParams{
+		if err := em.applyWrite(consensus.CmdCreateOrUpdateState, db.CreateOrUpdateInstanceStateParams{
 			InstanceID: dbInstance.ID,
 			Status:     instance.State.Status,
 			StatusCode: int64(instance.State.StatusCode),
-		})
-		if err != nil {
+		}); err != nil {
 			handlerLogger.Error().Err(err).Msg("Failed to store instance state")
 			return GoEventBus.Result{
 				Message: "Failed to store instance state",
@@ -424,6 +432,40 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 	}, nil
 }
 
+// applyWrite routes a write operation through RAFT when consensus is enabled,
+// or executes it directly on the local database otherwise.
+func (em *EventManager) applyWrite(cmdType consensus.CommandType, params any) error {
+	if em.app.RaftNode != nil {
+		_, err := em.app.RaftNode.Apply(cmdType, params)
+		return err
+	}
+
+	// No RAFT — execute directly
+	ctx := context.Background()
+	switch cmdType {
+	case consensus.CmdCreateInstance:
+		_, err := em.app.Database.CreateInstance(ctx, params.(db.CreateInstanceParams))
+		return err
+	case consensus.CmdUpdateInstance:
+		_, err := em.app.Database.UpdateInstance(ctx, params.(db.UpdateInstanceParams))
+		return err
+	case consensus.CmdCreateOrUpdateMetadata:
+		_, err := em.app.Database.CreateOrUpdateInstanceMetadata(ctx, params.(db.CreateOrUpdateInstanceMetadataParams))
+		return err
+	case consensus.CmdCreateOrUpdateUserData:
+		_, err := em.app.Database.CreateOrUpdateInstanceUserData(ctx, params.(db.CreateOrUpdateInstanceUserDataParams))
+		return err
+	case consensus.CmdCreateOrUpdateNetworkConfig:
+		_, err := em.app.Database.CreateOrUpdateInstanceNetworkConfig(ctx, params.(db.CreateOrUpdateInstanceNetworkConfigParams))
+		return err
+	case consensus.CmdCreateOrUpdateState:
+		_, err := em.app.Database.CreateOrUpdateInstanceState(ctx, params.(db.CreateOrUpdateInstanceStateParams))
+		return err
+	default:
+		return fmt.Errorf("unknown command type: %d", cmdType)
+	}
+}
+
 // strPtrOrNil returns a pointer to s if non-empty, otherwise nil.
 func strPtrOrNil(s string) *string {
 	if s == "" {
@@ -432,9 +474,19 @@ func strPtrOrNil(s string) *string {
 	return &s
 }
 
-// handleInstancesSync handles bulk instances synchronization events
+// handleInstancesSync handles bulk instances synchronization events.
+// When RAFT is enabled, only the leader node syncs from Incus.
 func (em *EventManager) handleInstancesSync(ctx context.Context, args map[string]any) (GoEventBus.Result, error) {
 	handlerLogger := em.logger.With().Str("handler", "instances_sync").Logger()
+
+	// Skip sync if RAFT is enabled and this node is not the leader
+	if em.app.RaftNode != nil && !em.app.RaftNode.IsLeader() {
+		handlerLogger.Debug().Msg("Not the leader, skipping instances sync")
+		return GoEventBus.Result{
+			Message: "Skipped: not the leader",
+		}, nil
+	}
+
 	handlerLogger.Info().Msg("Starting instances synchronization")
 
 	// Get all instances from Incus

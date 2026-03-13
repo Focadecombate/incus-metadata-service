@@ -5,6 +5,7 @@ import (
 
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/api"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/config"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/consensus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/events"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/incus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
@@ -42,7 +43,34 @@ func startServer() {
 		Database: db,
 		Incus:    incusClient,
 	}
-	
+
+	// Initialize RAFT consensus if enabled
+	if cfg.Raft != nil && cfg.Raft.Enabled {
+		raftCfg := &consensus.RaftConfig{
+			NodeID:    cfg.Raft.NodeID,
+			BindAddr:  cfg.Raft.BindAddr,
+			DataDir:   cfg.Raft.DataDir,
+			Peers:     cfg.Raft.Peers,
+			Bootstrap: cfg.Raft.Bootstrap,
+		}
+
+		raftNode, err := consensus.NewRaftNode(raftCfg, db)
+		if err != nil {
+			logs.Logger.Fatal().Err(err).Msg("Failed to initialize RAFT node")
+		}
+		defer func() {
+			if err := raftNode.Shutdown(); err != nil {
+				logs.Logger.Error().Err(err).Msg("Failed to shutdown RAFT node")
+			}
+		}()
+
+		app.RaftNode = raftNode
+		logs.Logger.Info().
+			Str("node_id", cfg.Raft.NodeID).
+			Str("bind_addr", cfg.Raft.BindAddr).
+			Msg("RAFT consensus enabled")
+	}
+
 	// Initialize event manager
 	eventManager, err := events.NewEventManager(app, nil)
 	if err != nil {

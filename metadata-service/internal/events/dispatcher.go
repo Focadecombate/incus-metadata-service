@@ -7,6 +7,7 @@ import (
 	"github.com/Raezil/GoEventBus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/api"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db"
 	incus "github.com/lxc/incus/shared/api"
 	"github.com/rs/zerolog"
 )
@@ -177,7 +178,7 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 	handlerLogger := em.logger.With().Str("handler", "instance_sync").Logger()
 	handlerLogger.Info().Msg("Starting instance synchronization")
 
-	instance, ok := args["instance"].(incus.Instance)
+	instance, ok := args["instance"].(incus.InstanceFull)
 	if !ok {
 		handlerLogger.Error().Msg("Missing instance argument")
 		return GoEventBus.Result{
@@ -188,6 +189,35 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 	handlerLogger.UpdateContext(func(c zerolog.Context) zerolog.Context {
 		return c.Str("instance_name", instance.Name)
 	})
+
+	dbInstance, err := em.app.Database.GetInstance(ctx, db.GetInstanceParams{
+		Name: instance.Name,
+		Project: instance.Project,
+	})
+
+	if err != nil {
+		handlerLogger.Error().Err(err).Msg("Failed to get instance from database")
+		return GoEventBus.Result{
+			Message: "Failed to get instance from database",
+		}, fmt.Errorf("failed to get instance from database: %w", err)
+	}
+
+	if dbInstance.ID == 0 {
+		handlerLogger.Info().Msg("Instance not found in database, creating new instance")
+		ipv4Address := instance.Config["ipv4.address"]
+		dbInstance, err = em.app.Database.CreateInstance(ctx, db.CreateInstanceParams{
+			Name: instance.Name,
+			Project: instance.Project,
+			IpAddress: &ipv4Address,
+		})
+		if err != nil {
+			handlerLogger.Error().Err(err).Msg("Failed to create instance in database")
+			return GoEventBus.Result{
+				Message: "Failed to create instance in database",
+			}, fmt.Errorf("failed to create instance in database: %w", err)
+		}
+	}
+
 
 	// TODO: Add actual instance sync logic here
 
@@ -204,7 +234,7 @@ func (em *EventManager) handleInstancesSync(ctx context.Context, args map[string
 	handlerLogger.Info().Msg("Starting instances synchronization")
 
 	// Get all instances from Incus
-	instances, err := em.app.Incus.GetInstancesAllProjects(incus.InstanceTypeAny)
+	instances, err := em.app.Incus.GetInstancesFullAllProjects(incus.InstanceTypeAny)
 	if err != nil {
 		handlerLogger.Error().Err(err).Msg("Failed to get instances from Incus")
 		return GoEventBus.Result{

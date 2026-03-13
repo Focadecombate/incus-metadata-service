@@ -131,6 +131,69 @@ func (m *MockQuerier) DeleteOldInstanceLogs(ctx context.Context, arg db.DeleteOl
 	return args.Error(0)
 }
 
+// Instance metadata methods
+func (m *MockQuerier) CreateOrUpdateInstanceMetadata(ctx context.Context, arg db.CreateOrUpdateInstanceMetadataParams) (db.InstanceMetadatum, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).(db.InstanceMetadatum), args.Error(1)
+}
+
+func (m *MockQuerier) GetInstanceMetadata(ctx context.Context, instanceID int64) (db.InstanceMetadatum, error) {
+	args := m.Called(ctx, instanceID)
+	return args.Get(0).(db.InstanceMetadatum), args.Error(1)
+}
+
+func (m *MockQuerier) GetInstanceMetadataByIP(ctx context.Context, ipAddress *string) (db.InstanceMetadatum, error) {
+	args := m.Called(ctx, ipAddress)
+	return args.Get(0).(db.InstanceMetadatum), args.Error(1)
+}
+
+func (m *MockQuerier) DeleteInstanceMetadata(ctx context.Context, instanceID int64) error {
+	args := m.Called(ctx, instanceID)
+	return args.Error(0)
+}
+
+// Instance user data methods
+func (m *MockQuerier) CreateOrUpdateInstanceUserData(ctx context.Context, arg db.CreateOrUpdateInstanceUserDataParams) (db.InstanceUserDatum, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).(db.InstanceUserDatum), args.Error(1)
+}
+
+func (m *MockQuerier) GetInstanceUserData(ctx context.Context, instanceID int64) (db.InstanceUserDatum, error) {
+	args := m.Called(ctx, instanceID)
+	return args.Get(0).(db.InstanceUserDatum), args.Error(1)
+}
+
+func (m *MockQuerier) GetInstanceUserDataByIP(ctx context.Context, ipAddress *string) (db.InstanceUserDatum, error) {
+	args := m.Called(ctx, ipAddress)
+	return args.Get(0).(db.InstanceUserDatum), args.Error(1)
+}
+
+func (m *MockQuerier) DeleteInstanceUserData(ctx context.Context, instanceID int64) error {
+	args := m.Called(ctx, instanceID)
+	return args.Error(0)
+}
+
+// Instance network config methods
+func (m *MockQuerier) CreateOrUpdateInstanceNetworkConfig(ctx context.Context, arg db.CreateOrUpdateInstanceNetworkConfigParams) (db.InstanceNetworkConfig, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).(db.InstanceNetworkConfig), args.Error(1)
+}
+
+func (m *MockQuerier) GetInstanceNetworkConfig(ctx context.Context, instanceID int64) (db.InstanceNetworkConfig, error) {
+	args := m.Called(ctx, instanceID)
+	return args.Get(0).(db.InstanceNetworkConfig), args.Error(1)
+}
+
+func (m *MockQuerier) GetInstanceNetworkConfigByIP(ctx context.Context, ipAddress *string) (db.InstanceNetworkConfig, error) {
+	args := m.Called(ctx, ipAddress)
+	return args.Get(0).(db.InstanceNetworkConfig), args.Error(1)
+}
+
+func (m *MockQuerier) DeleteInstanceNetworkConfig(ctx context.Context, instanceID int64) error {
+	args := m.Called(ctx, instanceID)
+	return args.Error(0)
+}
+
 // Profile methods
 func (m *MockQuerier) CreateProfile(ctx context.Context, arg db.CreateProfileParams) (db.Profile, error) {
 	args := m.Called(ctx, arg)

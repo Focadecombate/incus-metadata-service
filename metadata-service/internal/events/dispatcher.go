@@ -2,12 +2,14 @@ package events
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/Raezil/GoEventBus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/api"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/pkg/types"
 	incus "github.com/lxc/incus/shared/api"
 	"github.com/rs/zerolog"
 )
@@ -173,6 +175,55 @@ func (em *EventManager) handleInstanceCreated(ctx context.Context, args map[stri
 	}, nil
 }
 
+// extractNetworkAddresses extracts IPv4 and IPv6 addresses, MAC addresses, and interface
+// info from the Incus instance state network data.
+type ifaceInfo struct {
+	Name    string
+	Hwaddr  string
+	IPv4    string
+	IPv6    string
+	Netmask string
+}
+
+func extractInterfaceInfo(state *incus.InstanceState) []ifaceInfo {
+	if state == nil || state.Network == nil {
+		return nil
+	}
+
+	var ifaces []ifaceInfo
+	for name, net := range state.Network {
+		if name == "lo" {
+			continue
+		}
+
+		info := ifaceInfo{
+			Name:   name,
+			Hwaddr: net.Hwaddr,
+		}
+
+		for _, addr := range net.Addresses {
+			if addr.Scope == "link" {
+				continue
+			}
+			switch addr.Family {
+			case "inet":
+				if info.IPv4 == "" {
+					info.IPv4 = addr.Address
+					info.Netmask = addr.Netmask
+				}
+			case "inet6":
+				if info.IPv6 == "" {
+					info.IPv6 = addr.Address
+				}
+			}
+		}
+
+		ifaces = append(ifaces, info)
+	}
+
+	return ifaces
+}
+
 // handleInstanceSync handles single instance synchronization events
 func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]any) (GoEventBus.Result, error) {
 	handlerLogger := em.logger.With().Str("handler", "instance_sync").Logger()
@@ -190,25 +241,28 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 		return c.Str("instance_name", instance.Name)
 	})
 
+	// Extract network interface information from instance state
+	ifaces := extractInterfaceInfo(instance.State)
+
+	// Determine primary IPv4/IPv6 from the first non-loopback interface
+	var primaryIPv4, primaryIPv6 string
+	if len(ifaces) > 0 {
+		primaryIPv4 = ifaces[0].IPv4
+		primaryIPv6 = ifaces[0].IPv6
+	}
+
+	// Create or update instance in database
 	dbInstance, err := em.app.Database.GetInstance(ctx, db.GetInstanceParams{
-		Name: instance.Name,
+		Name:    instance.Name,
 		Project: instance.Project,
 	})
 
 	if err != nil {
-		handlerLogger.Error().Err(err).Msg("Failed to get instance from database")
-		return GoEventBus.Result{
-			Message: "Failed to get instance from database",
-		}, fmt.Errorf("failed to get instance from database: %w", err)
-	}
-
-	if dbInstance.ID == 0 {
-		handlerLogger.Info().Msg("Instance not found in database, creating new instance")
-		ipv4Address := instance.Config["ipv4.address"]
+		handlerLogger.Info().Err(err).Msg("Instance not found in database, creating new instance")
 		dbInstance, err = em.app.Database.CreateInstance(ctx, db.CreateInstanceParams{
-			Name: instance.Name,
-			Project: instance.Project,
-			IpAddress: &ipv4Address,
+			Name:      instance.Name,
+			Project:   instance.Project,
+			IpAddress: strPtrOrNil(primaryIPv4),
 		})
 		if err != nil {
 			handlerLogger.Error().Err(err).Msg("Failed to create instance in database")
@@ -216,16 +270,173 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 				Message: "Failed to create instance in database",
 			}, fmt.Errorf("failed to create instance in database: %w", err)
 		}
+	} else {
+		// Instance exists, update its IP address
+		dbInstance, err = em.app.Database.UpdateInstance(ctx, db.UpdateInstanceParams{
+			ID:        dbInstance.ID,
+			IpAddress: strPtrOrNil(primaryIPv4),
+		})
+		if err != nil {
+			handlerLogger.Error().Err(err).Msg("Failed to update instance in database")
+			return GoEventBus.Result{
+				Message: "Failed to update instance in database",
+			}, fmt.Errorf("failed to update instance in database: %w", err)
+		}
 	}
 
+	handlerLogger.Info().Int64("instance_id", dbInstance.ID).Msg("Instance synced in database")
 
-	// TODO: Add actual instance sync logic here
+	// Build and store metadata
+	macs := make(map[string]types.Mac)
+	for _, iface := range ifaces {
+		if iface.Hwaddr != "" {
+			macs[iface.Hwaddr] = types.Mac{
+				DeviceNumber:  iface.Name,
+				LocalHostname: instance.Name,
+				LocalIPv4:     iface.IPv4,
+				LocalIPv6:     iface.IPv6,
+				Mac:           iface.Hwaddr,
+			}
+		}
+	}
+
+	metadata := types.Metadata{
+		InstanceID:    fmt.Sprintf("%d", dbInstance.ID),
+		Hostname:      instance.Name,
+		LocalHostname: instance.Name,
+		LocalIPv4:     primaryIPv4,
+		LocalIPv6:     primaryIPv6,
+		Placement: types.Placement{
+			Project: instance.Project,
+			HostID:  instance.Location,
+		},
+		Network: types.Network{
+			Interfaces: types.Interfaces{
+				Macs: macs,
+			},
+		},
+	}
+
+	metadataBytes, err := json.Marshal(metadata)
+	if err != nil {
+		handlerLogger.Error().Err(err).Msg("Failed to marshal metadata")
+		return GoEventBus.Result{
+			Message: "Failed to marshal metadata",
+		}, fmt.Errorf("failed to marshal metadata: %w", err)
+	}
+
+	_, err = em.app.Database.CreateOrUpdateInstanceMetadata(ctx, db.CreateOrUpdateInstanceMetadataParams{
+		InstanceID: dbInstance.ID,
+		Metadata:   metadataBytes,
+	})
+	if err != nil {
+		handlerLogger.Error().Err(err).Msg("Failed to store instance metadata")
+		return GoEventBus.Result{
+			Message: "Failed to store instance metadata",
+		}, fmt.Errorf("failed to store instance metadata: %w", err)
+	}
+
+	// Build and store user data from cloud-init config
+	userData := instance.Config["cloud-init.user-data"]
+	if userData == "" {
+		userData = instance.Config["user.user-data"]
+	}
+	if userData != "" {
+		userDataBytes, err := json.Marshal(userData)
+		if err != nil {
+			handlerLogger.Error().Err(err).Msg("Failed to marshal user data")
+			return GoEventBus.Result{
+				Message: "Failed to marshal user data",
+			}, fmt.Errorf("failed to marshal user data: %w", err)
+		}
+
+		_, err = em.app.Database.CreateOrUpdateInstanceUserData(ctx, db.CreateOrUpdateInstanceUserDataParams{
+			InstanceID: dbInstance.ID,
+			UserData:   userDataBytes,
+		})
+		if err != nil {
+			handlerLogger.Error().Err(err).Msg("Failed to store instance user data")
+			return GoEventBus.Result{
+				Message: "Failed to store instance user data",
+			}, fmt.Errorf("failed to store instance user data: %w", err)
+		}
+	}
+
+	// Build and store network config (netplan v2 format)
+	ethernets := make(map[string]types.Ethernet)
+	for _, iface := range ifaces {
+		var addresses []string
+		if iface.IPv4 != "" {
+			addr := iface.IPv4
+			if iface.Netmask != "" {
+				addr = fmt.Sprintf("%s/%s", iface.IPv4, iface.Netmask)
+			}
+			addresses = append(addresses, addr)
+		}
+		if iface.IPv6 != "" {
+			addresses = append(addresses, iface.IPv6)
+		}
+
+		ethernets[iface.Name] = types.Ethernet{
+			Match: types.Match{
+				MacAddress: iface.Hwaddr,
+			},
+			Addresses: addresses,
+		}
+	}
+
+	networkConfig := types.NetworkConfig{
+		Version:   2,
+		Ethernets: ethernets,
+	}
+
+	networkConfigBytes, err := json.Marshal(networkConfig)
+	if err != nil {
+		handlerLogger.Error().Err(err).Msg("Failed to marshal network config")
+		return GoEventBus.Result{
+			Message: "Failed to marshal network config",
+		}, fmt.Errorf("failed to marshal network config: %w", err)
+	}
+
+	_, err = em.app.Database.CreateOrUpdateInstanceNetworkConfig(ctx, db.CreateOrUpdateInstanceNetworkConfigParams{
+		InstanceID:    dbInstance.ID,
+		NetworkConfig: networkConfigBytes,
+	})
+	if err != nil {
+		handlerLogger.Error().Err(err).Msg("Failed to store instance network config")
+		return GoEventBus.Result{
+			Message: "Failed to store instance network config",
+		}, fmt.Errorf("failed to store instance network config: %w", err)
+	}
+
+	// Update instance state
+	if instance.State != nil {
+		_, err = em.app.Database.CreateOrUpdateInstanceState(ctx, db.CreateOrUpdateInstanceStateParams{
+			InstanceID: dbInstance.ID,
+			Status:     instance.State.Status,
+			StatusCode: int64(instance.State.StatusCode),
+		})
+		if err != nil {
+			handlerLogger.Error().Err(err).Msg("Failed to store instance state")
+			return GoEventBus.Result{
+				Message: "Failed to store instance state",
+			}, fmt.Errorf("failed to store instance state: %w", err)
+		}
+	}
 
 	handlerLogger.Info().Msg("Instance sync completed")
-	
+
 	return GoEventBus.Result{
 		Message: "Instance sync completed",
 	}, nil
+}
+
+// strPtrOrNil returns a pointer to s if non-empty, otherwise nil.
+func strPtrOrNil(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 // handleInstancesSync handles bulk instances synchronization events

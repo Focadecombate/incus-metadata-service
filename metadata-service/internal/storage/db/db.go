@@ -30,8 +30,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createInstanceLogStmt, err = db.PrepareContext(ctx, createInstanceLog); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateInstanceLog: %w", err)
 	}
+	if q.createOrUpdateInstanceMetadataStmt, err = db.PrepareContext(ctx, createOrUpdateInstanceMetadata); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateOrUpdateInstanceMetadata: %w", err)
+	}
+	if q.createOrUpdateInstanceNetworkConfigStmt, err = db.PrepareContext(ctx, createOrUpdateInstanceNetworkConfig); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateOrUpdateInstanceNetworkConfig: %w", err)
+	}
 	if q.createOrUpdateInstanceStateStmt, err = db.PrepareContext(ctx, createOrUpdateInstanceState); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateOrUpdateInstanceState: %w", err)
+	}
+	if q.createOrUpdateInstanceUserDataStmt, err = db.PrepareContext(ctx, createOrUpdateInstanceUserData); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateOrUpdateInstanceUserData: %w", err)
 	}
 	if q.createProfileStmt, err = db.PrepareContext(ctx, createProfile); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateProfile: %w", err)
@@ -45,8 +54,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.deleteInstanceLogsStmt, err = db.PrepareContext(ctx, deleteInstanceLogs); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteInstanceLogs: %w", err)
 	}
+	if q.deleteInstanceMetadataStmt, err = db.PrepareContext(ctx, deleteInstanceMetadata); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteInstanceMetadata: %w", err)
+	}
+	if q.deleteInstanceNetworkConfigStmt, err = db.PrepareContext(ctx, deleteInstanceNetworkConfig); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteInstanceNetworkConfig: %w", err)
+	}
 	if q.deleteInstanceStateStmt, err = db.PrepareContext(ctx, deleteInstanceState); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteInstanceState: %w", err)
+	}
+	if q.deleteInstanceUserDataStmt, err = db.PrepareContext(ctx, deleteInstanceUserData); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteInstanceUserData: %w", err)
 	}
 	if q.deleteOldInstanceLogsStmt, err = db.PrepareContext(ctx, deleteOldInstanceLogs); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteOldInstanceLogs: %w", err)
@@ -75,8 +93,26 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getInstanceLogsByTypeStmt, err = db.PrepareContext(ctx, getInstanceLogsByType); err != nil {
 		return nil, fmt.Errorf("error preparing query GetInstanceLogsByType: %w", err)
 	}
+	if q.getInstanceMetadataStmt, err = db.PrepareContext(ctx, getInstanceMetadata); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceMetadata: %w", err)
+	}
+	if q.getInstanceMetadataByIPStmt, err = db.PrepareContext(ctx, getInstanceMetadataByIP); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceMetadataByIP: %w", err)
+	}
+	if q.getInstanceNetworkConfigStmt, err = db.PrepareContext(ctx, getInstanceNetworkConfig); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceNetworkConfig: %w", err)
+	}
+	if q.getInstanceNetworkConfigByIPStmt, err = db.PrepareContext(ctx, getInstanceNetworkConfigByIP); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceNetworkConfigByIP: %w", err)
+	}
 	if q.getInstanceStateStmt, err = db.PrepareContext(ctx, getInstanceState); err != nil {
 		return nil, fmt.Errorf("error preparing query GetInstanceState: %w", err)
+	}
+	if q.getInstanceUserDataStmt, err = db.PrepareContext(ctx, getInstanceUserData); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceUserData: %w", err)
+	}
+	if q.getInstanceUserDataByIPStmt, err = db.PrepareContext(ctx, getInstanceUserDataByIP); err != nil {
+		return nil, fmt.Errorf("error preparing query GetInstanceUserDataByIP: %w", err)
 	}
 	if q.getProfileStmt, err = db.PrepareContext(ctx, getProfile); err != nil {
 		return nil, fmt.Errorf("error preparing query GetProfile: %w", err)
@@ -126,9 +162,24 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createInstanceLogStmt: %w", cerr)
 		}
 	}
+	if q.createOrUpdateInstanceMetadataStmt != nil {
+		if cerr := q.createOrUpdateInstanceMetadataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createOrUpdateInstanceMetadataStmt: %w", cerr)
+		}
+	}
+	if q.createOrUpdateInstanceNetworkConfigStmt != nil {
+		if cerr := q.createOrUpdateInstanceNetworkConfigStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createOrUpdateInstanceNetworkConfigStmt: %w", cerr)
+		}
+	}
 	if q.createOrUpdateInstanceStateStmt != nil {
 		if cerr := q.createOrUpdateInstanceStateStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createOrUpdateInstanceStateStmt: %w", cerr)
+		}
+	}
+	if q.createOrUpdateInstanceUserDataStmt != nil {
+		if cerr := q.createOrUpdateInstanceUserDataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createOrUpdateInstanceUserDataStmt: %w", cerr)
 		}
 	}
 	if q.createProfileStmt != nil {
@@ -151,9 +202,24 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing deleteInstanceLogsStmt: %w", cerr)
 		}
 	}
+	if q.deleteInstanceMetadataStmt != nil {
+		if cerr := q.deleteInstanceMetadataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteInstanceMetadataStmt: %w", cerr)
+		}
+	}
+	if q.deleteInstanceNetworkConfigStmt != nil {
+		if cerr := q.deleteInstanceNetworkConfigStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteInstanceNetworkConfigStmt: %w", cerr)
+		}
+	}
 	if q.deleteInstanceStateStmt != nil {
 		if cerr := q.deleteInstanceStateStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteInstanceStateStmt: %w", cerr)
+		}
+	}
+	if q.deleteInstanceUserDataStmt != nil {
+		if cerr := q.deleteInstanceUserDataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteInstanceUserDataStmt: %w", cerr)
 		}
 	}
 	if q.deleteOldInstanceLogsStmt != nil {
@@ -201,9 +267,39 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getInstanceLogsByTypeStmt: %w", cerr)
 		}
 	}
+	if q.getInstanceMetadataStmt != nil {
+		if cerr := q.getInstanceMetadataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceMetadataStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceMetadataByIPStmt != nil {
+		if cerr := q.getInstanceMetadataByIPStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceMetadataByIPStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceNetworkConfigStmt != nil {
+		if cerr := q.getInstanceNetworkConfigStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceNetworkConfigStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceNetworkConfigByIPStmt != nil {
+		if cerr := q.getInstanceNetworkConfigByIPStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceNetworkConfigByIPStmt: %w", cerr)
+		}
+	}
 	if q.getInstanceStateStmt != nil {
 		if cerr := q.getInstanceStateStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getInstanceStateStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceUserDataStmt != nil {
+		if cerr := q.getInstanceUserDataStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceUserDataStmt: %w", cerr)
+		}
+	}
+	if q.getInstanceUserDataByIPStmt != nil {
+		if cerr := q.getInstanceUserDataByIPStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getInstanceUserDataByIPStmt: %w", cerr)
 		}
 	}
 	if q.getProfileStmt != nil {
@@ -298,71 +394,95 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                              DBTX
-	tx                              *sql.Tx
-	createInstanceStmt              *sql.Stmt
-	createInstanceLogStmt           *sql.Stmt
-	createOrUpdateInstanceStateStmt *sql.Stmt
-	createProfileStmt               *sql.Stmt
-	createVendorDataStmt            *sql.Stmt
-	deleteInstanceStmt              *sql.Stmt
-	deleteInstanceLogsStmt          *sql.Stmt
-	deleteInstanceStateStmt         *sql.Stmt
-	deleteOldInstanceLogsStmt       *sql.Stmt
-	deleteProfileStmt               *sql.Stmt
-	deleteVendorDataStmt            *sql.Stmt
-	getInstanceStmt                 *sql.Stmt
-	getInstanceByIDStmt             *sql.Stmt
-	getInstanceByIPStmt             *sql.Stmt
-	getInstanceLogsStmt             *sql.Stmt
-	getInstanceLogsByLevelStmt      *sql.Stmt
-	getInstanceLogsByTypeStmt       *sql.Stmt
-	getInstanceStateStmt            *sql.Stmt
-	getProfileStmt                  *sql.Stmt
-	getVendorDataStmt               *sql.Stmt
-	hardDeleteInstanceStmt          *sql.Stmt
-	listInstancesStmt               *sql.Stmt
-	listInstancesByProjectStmt      *sql.Stmt
-	listProfilesStmt                *sql.Stmt
-	listProfilesByProjectStmt       *sql.Stmt
-	updateInstanceStmt              *sql.Stmt
-	updateInstanceIPStmt            *sql.Stmt
-	updateProfileStmt               *sql.Stmt
-	updateVendorDataStmt            *sql.Stmt
+	db                                      DBTX
+	tx                                      *sql.Tx
+	createInstanceStmt                      *sql.Stmt
+	createInstanceLogStmt                   *sql.Stmt
+	createOrUpdateInstanceMetadataStmt      *sql.Stmt
+	createOrUpdateInstanceNetworkConfigStmt *sql.Stmt
+	createOrUpdateInstanceStateStmt         *sql.Stmt
+	createOrUpdateInstanceUserDataStmt      *sql.Stmt
+	createProfileStmt                       *sql.Stmt
+	createVendorDataStmt                    *sql.Stmt
+	deleteInstanceStmt                      *sql.Stmt
+	deleteInstanceLogsStmt                  *sql.Stmt
+	deleteInstanceMetadataStmt              *sql.Stmt
+	deleteInstanceNetworkConfigStmt         *sql.Stmt
+	deleteInstanceStateStmt                 *sql.Stmt
+	deleteInstanceUserDataStmt              *sql.Stmt
+	deleteOldInstanceLogsStmt               *sql.Stmt
+	deleteProfileStmt                       *sql.Stmt
+	deleteVendorDataStmt                    *sql.Stmt
+	getInstanceStmt                         *sql.Stmt
+	getInstanceByIDStmt                     *sql.Stmt
+	getInstanceByIPStmt                     *sql.Stmt
+	getInstanceLogsStmt                     *sql.Stmt
+	getInstanceLogsByLevelStmt              *sql.Stmt
+	getInstanceLogsByTypeStmt               *sql.Stmt
+	getInstanceMetadataStmt                 *sql.Stmt
+	getInstanceMetadataByIPStmt             *sql.Stmt
+	getInstanceNetworkConfigStmt            *sql.Stmt
+	getInstanceNetworkConfigByIPStmt        *sql.Stmt
+	getInstanceStateStmt                    *sql.Stmt
+	getInstanceUserDataStmt                 *sql.Stmt
+	getInstanceUserDataByIPStmt             *sql.Stmt
+	getProfileStmt                          *sql.Stmt
+	getVendorDataStmt                       *sql.Stmt
+	hardDeleteInstanceStmt                  *sql.Stmt
+	listInstancesStmt                       *sql.Stmt
+	listInstancesByProjectStmt              *sql.Stmt
+	listProfilesStmt                        *sql.Stmt
+	listProfilesByProjectStmt               *sql.Stmt
+	updateInstanceStmt                      *sql.Stmt
+	updateInstanceIPStmt                    *sql.Stmt
+	updateProfileStmt                       *sql.Stmt
+	updateVendorDataStmt                    *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                              tx,
-		tx:                              tx,
-		createInstanceStmt:              q.createInstanceStmt,
-		createInstanceLogStmt:           q.createInstanceLogStmt,
-		createOrUpdateInstanceStateStmt: q.createOrUpdateInstanceStateStmt,
-		createProfileStmt:               q.createProfileStmt,
-		createVendorDataStmt:            q.createVendorDataStmt,
-		deleteInstanceStmt:              q.deleteInstanceStmt,
-		deleteInstanceLogsStmt:          q.deleteInstanceLogsStmt,
-		deleteInstanceStateStmt:         q.deleteInstanceStateStmt,
-		deleteOldInstanceLogsStmt:       q.deleteOldInstanceLogsStmt,
-		deleteProfileStmt:               q.deleteProfileStmt,
-		deleteVendorDataStmt:            q.deleteVendorDataStmt,
-		getInstanceStmt:                 q.getInstanceStmt,
-		getInstanceByIDStmt:             q.getInstanceByIDStmt,
-		getInstanceByIPStmt:             q.getInstanceByIPStmt,
-		getInstanceLogsStmt:             q.getInstanceLogsStmt,
-		getInstanceLogsByLevelStmt:      q.getInstanceLogsByLevelStmt,
-		getInstanceLogsByTypeStmt:       q.getInstanceLogsByTypeStmt,
-		getInstanceStateStmt:            q.getInstanceStateStmt,
-		getProfileStmt:                  q.getProfileStmt,
-		getVendorDataStmt:               q.getVendorDataStmt,
-		hardDeleteInstanceStmt:          q.hardDeleteInstanceStmt,
-		listInstancesStmt:               q.listInstancesStmt,
-		listInstancesByProjectStmt:      q.listInstancesByProjectStmt,
-		listProfilesStmt:                q.listProfilesStmt,
-		listProfilesByProjectStmt:       q.listProfilesByProjectStmt,
-		updateInstanceStmt:              q.updateInstanceStmt,
-		updateInstanceIPStmt:            q.updateInstanceIPStmt,
-		updateProfileStmt:               q.updateProfileStmt,
-		updateVendorDataStmt:            q.updateVendorDataStmt,
+		db:                                      tx,
+		tx:                                      tx,
+		createInstanceStmt:                      q.createInstanceStmt,
+		createInstanceLogStmt:                   q.createInstanceLogStmt,
+		createOrUpdateInstanceMetadataStmt:      q.createOrUpdateInstanceMetadataStmt,
+		createOrUpdateInstanceNetworkConfigStmt: q.createOrUpdateInstanceNetworkConfigStmt,
+		createOrUpdateInstanceStateStmt:         q.createOrUpdateInstanceStateStmt,
+		createOrUpdateInstanceUserDataStmt:      q.createOrUpdateInstanceUserDataStmt,
+		createProfileStmt:                       q.createProfileStmt,
+		createVendorDataStmt:                    q.createVendorDataStmt,
+		deleteInstanceStmt:                      q.deleteInstanceStmt,
+		deleteInstanceLogsStmt:                  q.deleteInstanceLogsStmt,
+		deleteInstanceMetadataStmt:              q.deleteInstanceMetadataStmt,
+		deleteInstanceNetworkConfigStmt:         q.deleteInstanceNetworkConfigStmt,
+		deleteInstanceStateStmt:                 q.deleteInstanceStateStmt,
+		deleteInstanceUserDataStmt:              q.deleteInstanceUserDataStmt,
+		deleteOldInstanceLogsStmt:               q.deleteOldInstanceLogsStmt,
+		deleteProfileStmt:                       q.deleteProfileStmt,
+		deleteVendorDataStmt:                    q.deleteVendorDataStmt,
+		getInstanceStmt:                         q.getInstanceStmt,
+		getInstanceByIDStmt:                     q.getInstanceByIDStmt,
+		getInstanceByIPStmt:                     q.getInstanceByIPStmt,
+		getInstanceLogsStmt:                     q.getInstanceLogsStmt,
+		getInstanceLogsByLevelStmt:              q.getInstanceLogsByLevelStmt,
+		getInstanceLogsByTypeStmt:               q.getInstanceLogsByTypeStmt,
+		getInstanceMetadataStmt:                 q.getInstanceMetadataStmt,
+		getInstanceMetadataByIPStmt:             q.getInstanceMetadataByIPStmt,
+		getInstanceNetworkConfigStmt:            q.getInstanceNetworkConfigStmt,
+		getInstanceNetworkConfigByIPStmt:        q.getInstanceNetworkConfigByIPStmt,
+		getInstanceStateStmt:                    q.getInstanceStateStmt,
+		getInstanceUserDataStmt:                 q.getInstanceUserDataStmt,
+		getInstanceUserDataByIPStmt:             q.getInstanceUserDataByIPStmt,
+		getProfileStmt:                          q.getProfileStmt,
+		getVendorDataStmt:                       q.getVendorDataStmt,
+		hardDeleteInstanceStmt:                  q.hardDeleteInstanceStmt,
+		listInstancesStmt:                       q.listInstancesStmt,
+		listInstancesByProjectStmt:              q.listInstancesByProjectStmt,
+		listProfilesStmt:                        q.listProfilesStmt,
+		listProfilesByProjectStmt:               q.listProfilesByProjectStmt,
+		updateInstanceStmt:                      q.updateInstanceStmt,
+		updateInstanceIPStmt:                    q.updateInstanceIPStmt,
+		updateProfileStmt:                       q.updateProfileStmt,
+		updateVendorDataStmt:                    q.updateVendorDataStmt,
 	}
 }

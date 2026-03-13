@@ -13,14 +13,23 @@ type Querier interface {
 	CreateInstance(ctx context.Context, arg CreateInstanceParams) (Instance, error)
 	// ===== INSTANCE LOGS QUERIES =====
 	CreateInstanceLog(ctx context.Context, arg CreateInstanceLogParams) (InstanceLog, error)
+	// ===== INSTANCE METADATA QUERIES =====
+	CreateOrUpdateInstanceMetadata(ctx context.Context, arg CreateOrUpdateInstanceMetadataParams) (InstanceMetadatum, error)
+	// ===== INSTANCE NETWORK CONFIG QUERIES =====
+	CreateOrUpdateInstanceNetworkConfig(ctx context.Context, arg CreateOrUpdateInstanceNetworkConfigParams) (InstanceNetworkConfig, error)
 	// ===== INSTANCE STATE QUERIES =====
 	CreateOrUpdateInstanceState(ctx context.Context, arg CreateOrUpdateInstanceStateParams) (InstanceState, error)
+	// ===== INSTANCE USER DATA QUERIES =====
+	CreateOrUpdateInstanceUserData(ctx context.Context, arg CreateOrUpdateInstanceUserDataParams) (InstanceUserDatum, error)
 	// ===== PROFILES QUERIES =====
 	CreateProfile(ctx context.Context, arg CreateProfileParams) (Profile, error)
 	CreateVendorData(ctx context.Context, arg CreateVendorDataParams) (VendorDatum, error)
 	DeleteInstance(ctx context.Context, id int64) error
 	DeleteInstanceLogs(ctx context.Context, instanceID int64) error
+	DeleteInstanceMetadata(ctx context.Context, instanceID int64) error
+	DeleteInstanceNetworkConfig(ctx context.Context, instanceID int64) error
 	DeleteInstanceState(ctx context.Context, instanceID int64) error
+	DeleteInstanceUserData(ctx context.Context, instanceID int64) error
 	DeleteOldInstanceLogs(ctx context.Context, arg DeleteOldInstanceLogsParams) error
 	DeleteProfile(ctx context.Context, id int64) error
 	DeleteVendorData(ctx context.Context, id int64) error
@@ -30,7 +39,13 @@ type Querier interface {
 	GetInstanceLogs(ctx context.Context, arg GetInstanceLogsParams) ([]InstanceLog, error)
 	GetInstanceLogsByLevel(ctx context.Context, arg GetInstanceLogsByLevelParams) ([]InstanceLog, error)
 	GetInstanceLogsByType(ctx context.Context, arg GetInstanceLogsByTypeParams) ([]InstanceLog, error)
+	GetInstanceMetadata(ctx context.Context, instanceID int64) (InstanceMetadatum, error)
+	GetInstanceMetadataByIP(ctx context.Context, ipAddress *string) (InstanceMetadatum, error)
+	GetInstanceNetworkConfig(ctx context.Context, instanceID int64) (InstanceNetworkConfig, error)
+	GetInstanceNetworkConfigByIP(ctx context.Context, ipAddress *string) (InstanceNetworkConfig, error)
 	GetInstanceState(ctx context.Context, instanceID int64) (InstanceState, error)
+	GetInstanceUserData(ctx context.Context, instanceID int64) (InstanceUserDatum, error)
+	GetInstanceUserDataByIP(ctx context.Context, ipAddress *string) (InstanceUserDatum, error)
 	GetProfile(ctx context.Context, arg GetProfileParams) (Profile, error)
 	GetVendorData(ctx context.Context, name string) (GetVendorDataRow, error)
 	HardDeleteInstance(ctx context.Context, id int64) error

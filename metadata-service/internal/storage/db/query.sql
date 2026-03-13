@@ -261,3 +261,108 @@ SET
   deleted_at = CURRENT_TIMESTAMP
 WHERE
   id = ?;
+
+-- ===== INSTANCE METADATA QUERIES =====
+-- name: CreateOrUpdateInstanceMetadata :one
+INSERT INTO
+  instance_metadata (instance_id, metadata)
+VALUES
+  (?, ?) ON CONFLICT(instance_id) DO
+UPDATE
+SET
+  metadata = excluded.metadata,
+  updated_at = CURRENT_TIMESTAMP RETURNING *;
+
+-- name: GetInstanceMetadata :one
+SELECT
+  *
+FROM
+  instance_metadata
+WHERE
+  instance_id = ?;
+
+-- name: GetInstanceMetadataByIP :one
+SELECT
+  im.*
+FROM
+  instance_metadata im
+  JOIN instances i ON im.instance_id = i.id
+WHERE
+  i.ip_address = ?
+  AND i.deleted_at IS NULL;
+
+-- name: DeleteInstanceMetadata :exec
+DELETE FROM
+  instance_metadata
+WHERE
+  instance_id = ?;
+
+-- ===== INSTANCE USER DATA QUERIES =====
+-- name: CreateOrUpdateInstanceUserData :one
+INSERT INTO
+  instance_user_data (instance_id, user_data)
+VALUES
+  (?, ?) ON CONFLICT(instance_id) DO
+UPDATE
+SET
+  user_data = excluded.user_data,
+  updated_at = CURRENT_TIMESTAMP RETURNING *;
+
+-- name: GetInstanceUserData :one
+SELECT
+  *
+FROM
+  instance_user_data
+WHERE
+  instance_id = ?;
+
+-- name: GetInstanceUserDataByIP :one
+SELECT
+  iud.*
+FROM
+  instance_user_data iud
+  JOIN instances i ON iud.instance_id = i.id
+WHERE
+  i.ip_address = ?
+  AND i.deleted_at IS NULL;
+
+-- name: DeleteInstanceUserData :exec
+DELETE FROM
+  instance_user_data
+WHERE
+  instance_id = ?;
+
+-- ===== INSTANCE NETWORK CONFIG QUERIES =====
+-- name: CreateOrUpdateInstanceNetworkConfig :one
+INSERT INTO
+  instance_network_config (instance_id, network_config)
+VALUES
+  (?, ?) ON CONFLICT(instance_id) DO
+UPDATE
+SET
+  network_config = excluded.network_config,
+  updated_at = CURRENT_TIMESTAMP RETURNING *;
+
+-- name: GetInstanceNetworkConfig :one
+SELECT
+  *
+FROM
+  instance_network_config
+WHERE
+  instance_id = ?;
+
+-- name: GetInstanceNetworkConfigByIP :one
+SELECT
+  inc.*
+FROM
+  instance_network_config inc
+  JOIN instances i ON inc.instance_id = i.id
+WHERE
+  i.ip_address = ?
+  AND i.deleted_at IS NULL;
+
+-- name: DeleteInstanceNetworkConfig :exec
+DELETE FROM
+  instance_network_config
+WHERE
+  instance_id = ?;

@@ -73,6 +73,64 @@ func (q *Queries) CreateInstanceLog(ctx context.Context, arg CreateInstanceLogPa
 	return i, err
 }
 
+const createOrUpdateInstanceMetadata = `-- name: CreateOrUpdateInstanceMetadata :one
+INSERT INTO
+  instance_metadata (instance_id, metadata)
+VALUES
+  (?, ?) ON CONFLICT(instance_id) DO
+UPDATE
+SET
+  metadata = excluded.metadata,
+  updated_at = CURRENT_TIMESTAMP RETURNING id, instance_id, metadata, updated_at
+`
+
+type CreateOrUpdateInstanceMetadataParams struct {
+	InstanceID int64
+	Metadata   interface{}
+}
+
+// ===== INSTANCE METADATA QUERIES =====
+func (q *Queries) CreateOrUpdateInstanceMetadata(ctx context.Context, arg CreateOrUpdateInstanceMetadataParams) (InstanceMetadatum, error) {
+	row := q.queryRow(ctx, q.createOrUpdateInstanceMetadataStmt, createOrUpdateInstanceMetadata, arg.InstanceID, arg.Metadata)
+	var i InstanceMetadatum
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.Metadata,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createOrUpdateInstanceNetworkConfig = `-- name: CreateOrUpdateInstanceNetworkConfig :one
+INSERT INTO
+  instance_network_config (instance_id, network_config)
+VALUES
+  (?, ?) ON CONFLICT(instance_id) DO
+UPDATE
+SET
+  network_config = excluded.network_config,
+  updated_at = CURRENT_TIMESTAMP RETURNING id, instance_id, network_config, updated_at
+`
+
+type CreateOrUpdateInstanceNetworkConfigParams struct {
+	InstanceID    int64
+	NetworkConfig interface{}
+}
+
+// ===== INSTANCE NETWORK CONFIG QUERIES =====
+func (q *Queries) CreateOrUpdateInstanceNetworkConfig(ctx context.Context, arg CreateOrUpdateInstanceNetworkConfigParams) (InstanceNetworkConfig, error) {
+	row := q.queryRow(ctx, q.createOrUpdateInstanceNetworkConfigStmt, createOrUpdateInstanceNetworkConfig, arg.InstanceID, arg.NetworkConfig)
+	var i InstanceNetworkConfig
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.NetworkConfig,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const createOrUpdateInstanceState = `-- name: CreateOrUpdateInstanceState :one
 INSERT INTO
   instance_state (instance_id, status, status_code, updated_at)
@@ -100,6 +158,35 @@ func (q *Queries) CreateOrUpdateInstanceState(ctx context.Context, arg CreateOrU
 		&i.InstanceID,
 		&i.Status,
 		&i.StatusCode,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createOrUpdateInstanceUserData = `-- name: CreateOrUpdateInstanceUserData :one
+INSERT INTO
+  instance_user_data (instance_id, user_data)
+VALUES
+  (?, ?) ON CONFLICT(instance_id) DO
+UPDATE
+SET
+  user_data = excluded.user_data,
+  updated_at = CURRENT_TIMESTAMP RETURNING id, instance_id, user_data, updated_at
+`
+
+type CreateOrUpdateInstanceUserDataParams struct {
+	InstanceID int64
+	UserData   interface{}
+}
+
+// ===== INSTANCE USER DATA QUERIES =====
+func (q *Queries) CreateOrUpdateInstanceUserData(ctx context.Context, arg CreateOrUpdateInstanceUserDataParams) (InstanceUserDatum, error) {
+	row := q.queryRow(ctx, q.createOrUpdateInstanceUserDataStmt, createOrUpdateInstanceUserData, arg.InstanceID, arg.UserData)
+	var i InstanceUserDatum
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.UserData,
 		&i.UpdatedAt,
 	)
 	return i, err
@@ -186,6 +273,30 @@ func (q *Queries) DeleteInstanceLogs(ctx context.Context, instanceID int64) erro
 	return err
 }
 
+const deleteInstanceMetadata = `-- name: DeleteInstanceMetadata :exec
+DELETE FROM
+  instance_metadata
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) DeleteInstanceMetadata(ctx context.Context, instanceID int64) error {
+	_, err := q.exec(ctx, q.deleteInstanceMetadataStmt, deleteInstanceMetadata, instanceID)
+	return err
+}
+
+const deleteInstanceNetworkConfig = `-- name: DeleteInstanceNetworkConfig :exec
+DELETE FROM
+  instance_network_config
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) DeleteInstanceNetworkConfig(ctx context.Context, instanceID int64) error {
+	_, err := q.exec(ctx, q.deleteInstanceNetworkConfigStmt, deleteInstanceNetworkConfig, instanceID)
+	return err
+}
+
 const deleteInstanceState = `-- name: DeleteInstanceState :exec
 DELETE FROM
   instance_state
@@ -195,6 +306,18 @@ WHERE
 
 func (q *Queries) DeleteInstanceState(ctx context.Context, instanceID int64) error {
 	_, err := q.exec(ctx, q.deleteInstanceStateStmt, deleteInstanceState, instanceID)
+	return err
+}
+
+const deleteInstanceUserData = `-- name: DeleteInstanceUserData :exec
+DELETE FROM
+  instance_user_data
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) DeleteInstanceUserData(ctx context.Context, instanceID int64) error {
+	_, err := q.exec(ctx, q.deleteInstanceUserDataStmt, deleteInstanceUserData, instanceID)
 	return err
 }
 
@@ -486,6 +609,94 @@ func (q *Queries) GetInstanceLogsByType(ctx context.Context, arg GetInstanceLogs
 	return items, nil
 }
 
+const getInstanceMetadata = `-- name: GetInstanceMetadata :one
+SELECT
+  id, instance_id, metadata, updated_at
+FROM
+  instance_metadata
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) GetInstanceMetadata(ctx context.Context, instanceID int64) (InstanceMetadatum, error) {
+	row := q.queryRow(ctx, q.getInstanceMetadataStmt, getInstanceMetadata, instanceID)
+	var i InstanceMetadatum
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.Metadata,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getInstanceMetadataByIP = `-- name: GetInstanceMetadataByIP :one
+SELECT
+  im.id, im.instance_id, im.metadata, im.updated_at
+FROM
+  instance_metadata im
+  JOIN instances i ON im.instance_id = i.id
+WHERE
+  i.ip_address = ?
+  AND i.deleted_at IS NULL
+`
+
+func (q *Queries) GetInstanceMetadataByIP(ctx context.Context, ipAddress *string) (InstanceMetadatum, error) {
+	row := q.queryRow(ctx, q.getInstanceMetadataByIPStmt, getInstanceMetadataByIP, ipAddress)
+	var i InstanceMetadatum
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.Metadata,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getInstanceNetworkConfig = `-- name: GetInstanceNetworkConfig :one
+SELECT
+  id, instance_id, network_config, updated_at
+FROM
+  instance_network_config
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) GetInstanceNetworkConfig(ctx context.Context, instanceID int64) (InstanceNetworkConfig, error) {
+	row := q.queryRow(ctx, q.getInstanceNetworkConfigStmt, getInstanceNetworkConfig, instanceID)
+	var i InstanceNetworkConfig
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.NetworkConfig,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getInstanceNetworkConfigByIP = `-- name: GetInstanceNetworkConfigByIP :one
+SELECT
+  inc.id, inc.instance_id, inc.network_config, inc.updated_at
+FROM
+  instance_network_config inc
+  JOIN instances i ON inc.instance_id = i.id
+WHERE
+  i.ip_address = ?
+  AND i.deleted_at IS NULL
+`
+
+func (q *Queries) GetInstanceNetworkConfigByIP(ctx context.Context, ipAddress *string) (InstanceNetworkConfig, error) {
+	row := q.queryRow(ctx, q.getInstanceNetworkConfigByIPStmt, getInstanceNetworkConfigByIP, ipAddress)
+	var i InstanceNetworkConfig
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.NetworkConfig,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getInstanceState = `-- name: GetInstanceState :one
 SELECT
   id, instance_id, status, status_code, updated_at
@@ -503,6 +714,50 @@ func (q *Queries) GetInstanceState(ctx context.Context, instanceID int64) (Insta
 		&i.InstanceID,
 		&i.Status,
 		&i.StatusCode,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getInstanceUserData = `-- name: GetInstanceUserData :one
+SELECT
+  id, instance_id, user_data, updated_at
+FROM
+  instance_user_data
+WHERE
+  instance_id = ?
+`
+
+func (q *Queries) GetInstanceUserData(ctx context.Context, instanceID int64) (InstanceUserDatum, error) {
+	row := q.queryRow(ctx, q.getInstanceUserDataStmt, getInstanceUserData, instanceID)
+	var i InstanceUserDatum
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.UserData,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getInstanceUserDataByIP = `-- name: GetInstanceUserDataByIP :one
+SELECT
+  iud.id, iud.instance_id, iud.user_data, iud.updated_at
+FROM
+  instance_user_data iud
+  JOIN instances i ON iud.instance_id = i.id
+WHERE
+  i.ip_address = ?
+  AND i.deleted_at IS NULL
+`
+
+func (q *Queries) GetInstanceUserDataByIP(ctx context.Context, ipAddress *string) (InstanceUserDatum, error) {
+	row := q.queryRow(ctx, q.getInstanceUserDataByIPStmt, getInstanceUserDataByIP, ipAddress)
+	var i InstanceUserDatum
+	err := row.Scan(
+		&i.ID,
+		&i.InstanceID,
+		&i.UserData,
 		&i.UpdatedAt,
 	)
 	return i, err

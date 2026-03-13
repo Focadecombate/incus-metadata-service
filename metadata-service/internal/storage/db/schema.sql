@@ -60,6 +60,33 @@ CREATE TABLE IF NOT EXISTS profiles (
   UNIQUE(name, project)
 );
 
+-- Instance metadata table for cloud-init compatible metadata
+CREATE TABLE IF NOT EXISTS instance_metadata (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  instance_id INTEGER NOT NULL UNIQUE,
+  metadata JSONB NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
+);
+
+-- Instance user data table for cloud-init user data
+CREATE TABLE IF NOT EXISTS instance_user_data (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  instance_id INTEGER NOT NULL UNIQUE,
+  user_data JSONB NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
+);
+
+-- Instance network config table for cloud-init network configuration
+CREATE TABLE IF NOT EXISTS instance_network_config (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  instance_id INTEGER NOT NULL UNIQUE,
+  network_config JSONB NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (instance_id) REFERENCES instances(id) ON DELETE CASCADE
+);
+
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_instances_name ON instances(name);
 CREATE INDEX IF NOT EXISTS idx_instances_project ON instances(project);
@@ -78,3 +105,7 @@ CREATE INDEX IF NOT EXISTS idx_instance_logs_created_at ON instance_logs(created
 
 CREATE INDEX IF NOT EXISTS idx_profiles_name_project ON profiles(name, project);
 CREATE INDEX IF NOT EXISTS idx_profiles_deleted_at ON profiles(deleted_at);
+
+CREATE INDEX IF NOT EXISTS idx_instance_metadata_instance_id ON instance_metadata(instance_id);
+CREATE INDEX IF NOT EXISTS idx_instance_user_data_instance_id ON instance_user_data(instance_id);
+CREATE INDEX IF NOT EXISTS idx_instance_network_config_instance_id ON instance_network_config(instance_id);

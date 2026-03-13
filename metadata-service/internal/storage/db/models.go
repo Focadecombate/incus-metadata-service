@@ -27,11 +27,32 @@ type InstanceLog struct {
 	CreatedAt  *time.Time
 }
 
+type InstanceMetadatum struct {
+	ID         int64
+	InstanceID int64
+	Metadata   interface{}
+	UpdatedAt  *time.Time
+}
+
+type InstanceNetworkConfig struct {
+	ID            int64
+	InstanceID    int64
+	NetworkConfig interface{}
+	UpdatedAt     *time.Time
+}
+
 type InstanceState struct {
 	ID         int64
 	InstanceID int64
 	Status     string
 	StatusCode int64
+	UpdatedAt  *time.Time
+}
+
+type InstanceUserDatum struct {
+	ID         int64
+	InstanceID int64
+	UserData   interface{}
 	UpdatedAt  *time.Time
 }
 

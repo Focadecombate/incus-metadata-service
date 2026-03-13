@@ -41,6 +41,12 @@ type RaftConfig struct {
 	Bootstrap bool `env:"BOOTSTRAP,default=false"`
 }
 
+// OtelConfig holds the configuration for OpenTelemetry.
+type OtelConfig struct {
+	// MetricsEnabled activates OpenTelemetry metrics with Prometheus exporter.
+	MetricsEnabled bool `env:"METRICS_ENABLED,default=true"`
+}
+
 // Config holds the configuration for the metadata service.
 type Config struct {
 	// Port is the port on which the metadata service will run.
@@ -53,6 +59,8 @@ type Config struct {
 	Database *DatabaseConfig `env:",prefix=DATABASE_CONFIG_"`
 	// Raft contains the configuration for RAFT consensus.
 	Raft *RaftConfig `env:",prefix=RAFT_"`
+	// Otel contains the configuration for OpenTelemetry.
+	Otel *OtelConfig `env:",prefix=OTEL_"`
 }
 
 func LoadConfig() (*Config, error) {

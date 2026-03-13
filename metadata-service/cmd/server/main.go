@@ -10,6 +10,7 @@ import (
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/incus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/telemetry"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,6 +26,20 @@ func startServer() {
 	logs.InitLogger(cfg.LogLevel)
 	logs.Logger.Info().Msg("Starting metadata service server...")
 
+	// Initialize OpenTelemetry metrics with Prometheus exporter
+	if cfg.Otel == nil || cfg.Otel.MetricsEnabled {
+		meterProvider, err := telemetry.InitMetrics()
+		if err != nil {
+			logs.Logger.Fatal().Err(err).Msg("Failed to initialize metrics")
+		}
+		defer func() {
+			if err := meterProvider.Shutdown(context.Background()); err != nil {
+				logs.Logger.Error().Err(err).Msg("Failed to shutdown meter provider")
+			}
+		}()
+		logs.Logger.Info().Msg("OpenTelemetry metrics initialized with Prometheus exporter")
+	}
+
 	// Connect to the database
 	db, err := db.ConnectDB(cfg)
 	if err != nil {
@@ -37,9 +52,13 @@ func startServer() {
 		logs.Logger.Fatal().Err(err).Msg("Failed to connect to Incus")
 	}
 
+	router := gin.Default()
+	router.Use(telemetry.MetricsMiddleware())
+	router.GET("/metrics", telemetry.MetricsHandler())
+
 	app := &api.App{
 		Config:   cfg,
-		Router:   gin.Default(),
+		Router:   router,
 		Database: db,
 		Incus:    incusClient,
 	}

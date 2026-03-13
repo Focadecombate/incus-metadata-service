@@ -4,15 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/Raezil/GoEventBus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/api"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/consensus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/storage/db"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/telemetry"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/pkg/types"
 	incus "github.com/lxc/incus/shared/api"
 	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 // Event projection constants
@@ -45,6 +49,9 @@ type EventManager struct {
 	eventStore *GoEventBus.EventStore
 	config     *EventStoreConfig
 	logger     zerolog.Logger
+
+	eventDuration metric.Float64Histogram
+	eventTotal    metric.Int64Counter
 }
 
 // EventHandler represents a typed event handler function
@@ -62,10 +69,23 @@ func NewEventManager(app *api.App, config *EventStoreConfig) (*EventManager, err
 	logger := logs.Logger.With().Str("component", "event_manager").Logger()
 	logger.Info().Msg("Creating event manager")
 
+	meter := telemetry.GetMeter()
+	eventDuration, _ := meter.Float64Histogram(
+		"event_processing_duration_seconds",
+		metric.WithDescription("Duration of event processing in seconds"),
+		metric.WithUnit("s"),
+	)
+	eventTotal, _ := meter.Int64Counter(
+		"event_processing_total",
+		metric.WithDescription("Total number of events processed"),
+	)
+
 	manager := &EventManager{
-		app:    app,
-		config: config,
-		logger: logger,
+		app:           app,
+		config:        config,
+		logger:        logger,
+		eventDuration: eventDuration,
+		eventTotal:    eventTotal,
 	}
 
 	// Create dispatcher with handlers
@@ -103,6 +123,30 @@ func (em *EventManager) GetEventStore() *GoEventBus.EventStore {
 	return em.eventStore
 }
 
+// instrumentedHandler wraps an event handler to record processing metrics.
+func (em *EventManager) instrumentedHandler(projection string, handler EventHandler) EventHandler {
+	return func(ctx context.Context, args map[string]any) (GoEventBus.Result, error) {
+		start := time.Now()
+		result, err := handler(ctx, args)
+		duration := time.Since(start).Seconds()
+
+		status := "success"
+		if err != nil {
+			status = "error"
+		}
+
+		attrs := metric.WithAttributes(
+			attribute.String("projection", projection),
+			attribute.String("status", status),
+		)
+
+		em.eventDuration.Record(ctx, duration, attrs)
+		em.eventTotal.Add(ctx, 1, attrs)
+
+		return result, err
+	}
+}
+
 // createDispatcher creates the event dispatcher with all handlers
 func (em *EventManager) createDispatcher() error {
 	em.logger.Debug().Msg("Creating event dispatcher")
@@ -111,7 +155,7 @@ func (em *EventManager) createDispatcher() error {
 	dispatcher := make(GoEventBus.Dispatcher)
 
 	for projection, handler := range handlers {
-		dispatcher[projection] = handler
+		dispatcher[projection] = em.instrumentedHandler(projection, handler)
 		em.logger.Debug().
 			Str("projection", projection).
 			Msg("Registered event handler")

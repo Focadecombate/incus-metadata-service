@@ -8,8 +8,11 @@ import (
 	"github.com/Raezil/GoEventBus"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/api"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
+	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/telemetry"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 // CronConfig holds configuration for cron jobs
@@ -30,6 +33,9 @@ type CronManager struct {
 	app       *api.App
 	config    *CronConfig
 	logger    zerolog.Logger
+
+	cronDuration metric.Float64Histogram
+	cronTotal    metric.Int64Counter
 }
 
 // JobDefinition represents a cron job configuration
@@ -55,11 +61,24 @@ func NewCronManager(app *api.App, config *CronConfig) (*CronManager, error) {
 		return nil, fmt.Errorf("failed to create scheduler: %w", err)
 	}
 
+	meter := telemetry.GetMeter()
+	cronDuration, _ := meter.Float64Histogram(
+		"cron_job_duration_seconds",
+		metric.WithDescription("Duration of cron job execution in seconds"),
+		metric.WithUnit("s"),
+	)
+	cronTotal, _ := meter.Int64Counter(
+		"cron_job_total",
+		metric.WithDescription("Total number of cron job executions"),
+	)
+
 	manager := &CronManager{
-		scheduler: scheduler,
-		app:       app,
-		config:    config,
-		logger:    logger,
+		scheduler:    scheduler,
+		app:          app,
+		config:       config,
+		logger:       logger,
+		cronDuration: cronDuration,
+		cronTotal:    cronTotal,
 	}
 
 	// Set the scheduler in the app
@@ -120,11 +139,23 @@ func (cm *CronManager) getJobDefinitions() []JobDefinition {
 	}
 }
 
-// addJob adds a single job to the scheduler
+// addJob adds a single job to the scheduler with metrics instrumentation.
 func (cm *CronManager) addJob(job JobDefinition) error {
+	instrumentedTask := func() {
+		start := time.Now()
+		job.Task()
+		duration := time.Since(start).Seconds()
+
+		attrs := metric.WithAttributes(
+			attribute.String("job_name", job.Name),
+		)
+		cm.cronDuration.Record(context.Background(), duration, attrs)
+		cm.cronTotal.Add(context.Background(), 1, attrs)
+	}
+
 	_, err := cm.scheduler.NewJob(
 		gocron.DurationJob(job.Interval),
-		gocron.NewTask(job.Task),
+		gocron.NewTask(instrumentedTask),
 	)
 	return err
 }

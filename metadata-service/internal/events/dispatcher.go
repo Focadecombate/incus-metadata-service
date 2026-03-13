@@ -337,22 +337,15 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 	}
 
 	// Build and store user data from cloud-init config
+	// User-data is stored as a raw string (YAML cloud-config or shell script)
 	userData := instance.Config["cloud-init.user-data"]
 	if userData == "" {
 		userData = instance.Config["user.user-data"]
 	}
 	if userData != "" {
-		userDataBytes, err := json.Marshal(userData)
-		if err != nil {
-			handlerLogger.Error().Err(err).Msg("Failed to marshal user data")
-			return GoEventBus.Result{
-				Message: "Failed to marshal user data",
-			}, fmt.Errorf("failed to marshal user data: %w", err)
-		}
-
 		_, err = em.app.Database.CreateOrUpdateInstanceUserData(ctx, db.CreateOrUpdateInstanceUserDataParams{
 			InstanceID: dbInstance.ID,
-			UserData:   userDataBytes,
+			UserData:   userData,
 		})
 		if err != nil {
 			handlerLogger.Error().Err(err).Msg("Failed to store instance user data")

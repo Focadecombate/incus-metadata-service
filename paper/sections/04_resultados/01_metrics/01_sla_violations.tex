@@ -1,0 +1,99 @@
+
+\begin{figure}[ht!]
+    \centering
+    \footnotesize
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            clip=false,
+            symbolic x coords={
+                Low\\On,
+                Low\\Off,
+                High\\On,
+                High\\Off
+            },
+            xtick=data,
+            ymin=0,
+            ymax=350,
+            ylabel={Violações de SLA de Latência},
+            bar width=20pt,
+            enlarge x limits=0.15,
+            xticklabel style={align=center},
+            width=12cm,
+            height=7cm,
+            legend style={at={(0.5,1.05)}, anchor=south, legend columns=-1}
+        ]
+        % SMMS (green)
+        \addplot+[
+            fill=mygreen,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=mygreen},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 17.3) -= (27.86,17.3)
+            (Low\\On, 17.3) += (27.86,27.3)
+            (Low\\Off, 17.3) += (27.86,27.86)
+            (Low\\Off, 17.3) -= (27.86,17.3)
+            (High\\On, 69.6) +- (22.35,22.35)
+            (High\\Off, 10.6) += (22.35,22.35)
+            (High\\Off, 10.6) -= (22.35,10.6)
+        };
+
+        % Thea (red)
+        \addplot+[
+            fill=myred,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=myred},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 274.1) +- (19.96,19.96)
+            (Low\\Off, 106.9) +- (36.71,36.71)
+            (High\\On, 302.0) +- (8.52,8.52)
+            (High\\Off, 28.1) += (47.69,47.69)
+            (High\\Off, 28.1) -= (47.69,28.1)
+        };
+
+        
+        % EDF (blue)
+        \addplot+[
+            fill=myblue,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=myblue},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 175.4) +- (14.27,14.27)
+            (Low\\Off, 88.6) +- (25.38,25.38)
+            (High\\On, 230.5) +- (9.63,9.63)
+            (High\\Off, 75.3) +- (43.31,43.31)
+        };
+
+        \legend{SMMS, Thea, EDF}
+
+        % Custom label on the left
+        \draw
+          (axis description cs:-0.165,-0.19)
+          node[anchor=south west, align=left] {\footnotesize
+            \textbf{Workload:}\\
+            \textbf{Nuvem:}
+          };
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Violações de SLA de Latência (Prazos) em função da carga de trabalho e da configuração da nuvem.}
+    \label{fig:results}
+\end{figure}
+
+
+A Figura \ref{fig:results} mostra a quantidade de violações de SLA de latência em cada cenário, comparando o SMMS (barras verdes) com o Thea (vermelho) e um algoritmo base EDF (Earliest Deadline First, azul). Observa-se que o SMMS resulta no menor número de violações em todos os cenários. Em particular, sob carga baixa com nuvem ativa (Low On), o SMMS teve cerca de 17 violações, enquanto o Thea excedeu 270 violações e o EDF aproximadamente 175. Essa diferença drástica indica a eficiência do SMMS em cumprir os prazos quando há recursos de borda e nuvem disponíveis, ao passo que o Thea acaba enviando muitas requisições para a nuvem e viola a maioria dos prazos nesse cenário. No caso de carga alta com nuvem ativa (High On), o SMMS também apresenta menos violações (\textasciitilde 70) em comparação com o Thea (\textasciitilde302) e o EDF (\textasciitilde230), demonstrando maior eficiência do SMMS mesmo sob alta demanda. Já nos cenários sem nuvem (Cloud Off), todos os algoritmos têm desempenho melhor em termos de prazos perdidos, pois evitam a latência adicional da nuvem. Em carga alta sem nuvem (High Off), o SMMS praticamente não teve violações (cerca de 10), superando tanto o Thea (\textasciitilde28) quanto o EDF (\textasciitilde75). Nesses cenários sem nuvem, a vantagem do SMMS persiste, embora a diferença relativa seja menor, o Thea melhorou bastante na ausência de nuvem, mas ainda fica atrás do SMMS. Em suma, a Figura \ref{fig:results} evidencia que o SMMS reduz significativamente as violações de prazos (deadlines) em todos os casos testados, especialmente nos cenários em que a nuvem está ativada, nos quais o Thea apresentou inúmeras violações de SLA de latência enquanto o SMMS manteve esse número baixo.
+

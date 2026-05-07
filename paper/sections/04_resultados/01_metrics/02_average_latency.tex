@@ -1,0 +1,95 @@
+
+\begin{figure}[ht!]
+    \centering
+    \footnotesize
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            clip=false,
+            symbolic x coords={
+                Low\\On,
+                Low\\Off,
+                High\\On,
+                High\\Off
+            },
+            xtick=data,
+            ymin=0,
+            ymax=240,
+            ylabel={Latência Média (ms)},
+            bar width=20pt,
+            enlarge x limits=0.15,
+            xticklabel style={align=center},
+            width=12cm,
+            height=7cm,
+            legend style={at={(0.5,1.05)}, anchor=south, legend columns=-1}
+        ]
+        % SMMS (green)
+        \addplot+[
+            fill=mygreen,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=mygreen},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 20.0) +- (0.0,0.0)
+            (Low\\Off, 20.0) +- (0.0,0.0)
+            (High\\On, 60.0) +- (0.0,0.0)
+            (High\\Off, 26.0) +- (0.0,0.0)
+        };
+
+        % Thea (red)
+        \addplot+[
+            fill=myred,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=myred},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 170.97) +- (9.64,9.64)
+            (Low\\Off, 28.7) +- (3.01,3.01)
+            (High\\On, 205.98) +- (0.28,0.28)
+            (High\\Off, 28.4) +- (1.26,1.26)
+        };
+        
+        % EDF (blue)
+        \addplot+[
+            fill=myblue,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=myblue},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 81.04) +- (4.85,4.85)
+            (Low\\Off, 29.01) +- (1.4,1.4)
+            (High\\On, 136.69) +- (3.46,3.46)
+            (High\\Off, 29.61) +- (2.81,2.81)
+        };
+
+        \legend{SMMS, Thea, EDF}
+
+        % Custom label on the left
+        \draw
+          (axis description cs:-0.165,-0.19)
+          node[anchor=south west, align=left] {\footnotesize
+            \textbf{Workload:}\\
+            \textbf{Nuvem:}
+          };
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Desempenho médio de latência em função da carga de trabalho e da configuração da nuvem.}
+    \label{fig:results2}
+\end{figure}
+
+A Figura \ref{fig:results2} ilustra a latência média das requisições em cada cenário para os três algoritmos. Nota-se que o SMMS alcançou as menores latências médias em todos os cenários. Sob carga baixa, a latência média do SMMS ficou em torno de 20 ms (tanto com nuvem ligada quanto desligada), indicando que o SMMS conseguiu atender as requisições majoritariamente na borda local, mantendo o tempo de resposta baixo e praticamente igual ao mínimo (latência intrínseca da borda). O EDF apresentou latências maiores (por exemplo, \textasciitilde81 ms em Low On), e o Thea teve as latências médias mais elevadas quando a nuvem estava disponível: aproximadamente 171 ms em Low On e 206 ms em High On.
+
+Esses valores altos para o Thea refletem sua estratégia de offloading, resultando em muitas requisições sendo enviadas para a nuvem e aumentando substancialmente o tempo médio de resposta. Em contraste, o SMMS equilibra melhor esses fatores e evita usar a nuvem desnecessariamente, o que lhe permite manter latências próximas das mínimas possíveis. Nos cenários sem nuvem (Low Off e High Off), todos os algoritmos apresentam latências médias similares e baixas (em torno de 20–30 ms), já que todas as requisições são servidas nas bordas. Um ponto interessante é que, em carga alta com nuvem ativada (High On), o SMMS obteve latência média em torno de 60 ms, consideravelmente menor que a do Thea (206 ms) e do EDF (137 ms). Isso indica que, mesmo utilizando a nuvem quando necessário em alta carga, o SMMS consegue limitar o impacto no tempo de resposta médio, possivelmente enviando apenas o estritamente necessário para a nuvem e mantendo a maior parte do processamento próximo dos usuários.
+

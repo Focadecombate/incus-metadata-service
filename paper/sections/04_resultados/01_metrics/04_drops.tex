@@ -1,0 +1,93 @@
+
+\begin{figure}[ht!]
+    \centering
+    \footnotesize
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            clip=false,
+            symbolic x coords={
+                Low\\On,
+                Low\\Off,
+                High\\On,
+                High\\Off
+            },
+            xtick=data,
+            ymin=0,
+            ymax=2,
+            ylabel={Violações de SLA do tipo \textit{Drop}},
+            bar width=20pt,
+            enlarge x limits=0.15,
+            xticklabel style={align=center},
+            width=12cm,
+            height=7cm,
+            legend style={at={(0.5,1.05)}, anchor=south, legend columns=-1}
+        ]
+        % SMMS (green)
+        \addplot+[
+            fill=mygreen,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=mygreen},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 0.0) +- (0.0,0.0)
+            (Low\\Off, 0.0) +- (0.0,0.0)
+            (High\\On, 0.0) +- (0.0,0.0)
+            (High\\Off, 1.0) +- (0.0,0.0)
+        };
+
+        % Thea (red)
+        \addplot+[
+            fill=myred,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=myred},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 0.0) +- (0.0,0.0)
+            (Low\\Off, 0.0) +- (0.0,0.0)
+            (High\\On, 0.0) +- (0.0,0.0)
+            (High\\Off, 1.0) +- (0.0,0.0)
+        };
+
+        % EDF (blue)
+        \addplot+[
+            fill=myblue,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=myblue},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 0.0) +- (0.0,0.0)
+            (Low\\Off, 0.0) +- (0.0,0.0)
+            (High\\On, 0.0) +- (0.0,0.0)
+            (High\\Off, 0.9) +- (0.74,0.74)
+        };
+
+        \legend{SMMS, Thea, EDF}
+
+        % Custom label on the left
+        \draw
+          (axis description cs:-0.165,-0.19)
+          node[anchor=south west, align=left] {\footnotesize
+            \textbf{Workload:}\\
+            \textbf{Nuvem:}
+          };
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Violações de SLA do tipo \textit{drop}, em função da carga de trabalho e da configuração da nuvem.}
+    \label{fig:results4}
+\end{figure}
+
+A Figura \ref{fig:results4} detalha as violações de SLA do tipo \textit{drop}, isto é, quando um serviço não é alocado em servidor algum. Coerente com a análise anterior, este gráfico mostra que essas violações por falta de alocação somente ocorreram no cenário de carga alta sem nuvem (High Off). Nos demais cenários (ambas as cargas com nuvem, e carga baixa sem nuvem), todas as barras estão zeradas, indicando que tanto o SMMS quanto o Thea e o EDF conseguiram alocar todos os serviços gerados. Em High Off, contudo, observa-se uma pequena quantidade de \textit{drops}: o SMMS e o Thea apresentaram em média 1 serviço com \textit{drop} cada, enquanto o EDF também registrou aproximadamente 1 \textit{drop} (valor médio de 0,9, com ligeira variação entre execuções). Em resumo, a Figura \ref{fig:results3}, em conjunto com a Figura \ref{fig:results4}, evidenciam que a disponibilidade da nuvem reduz a probabilidade de \textit{drop} e, inevitavelmente, de perda de requisições em cenários de alta carga. Nesse quesito, o SMMS e o Thea são equivalentes, sendo o SMMS levemente mais consistente no atendimento de requisições, tanto em valor médio quanto em desvio padrão.
+

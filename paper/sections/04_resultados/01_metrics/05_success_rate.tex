@@ -1,0 +1,97 @@
+
+
+\begin{figure}[ht!]
+    \centering
+    \footnotesize
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            clip=false,
+            symbolic x coords={
+                Low\\On,
+                Low\\Off,
+                High\\On,
+                High\\Off
+            },
+            xtick=data,
+            ymin=0,
+            ymax=110,
+            ylabel={Taxa de Sucesso (\%)},
+            bar width=20pt,
+            enlarge x limits=0.15,
+            xticklabel style={align=center},
+            width=12cm,
+            height=7cm,
+            legend style={at={(0.5,1.05)}, anchor=south, legend columns=-1}
+        ]
+        % SMMS (green)
+        \addplot+[
+            fill=mygreen,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=2pt, text=black},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 95.0) +- (0.0,0.0)
+            (Low\\Off, 95.0) +- (0.0,0.0)
+            (High\\On, 80.0) +- (0.0,0.0)
+            (High\\Off, 96.0) +- (0.0,0.0)
+        };
+
+        % Thea (red)
+        \addplot+[
+            fill=myred,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=2pt, text=black},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 14.82) +- (3.72,3.72)
+            (Low\\Off, 66.89) +- (11.45,11.45)
+            (High\\On, 8.72) +- (2.28,2.28)
+            (High\\Off, 90.0) +- (10.0,17.0)
+        };
+
+        % EDF (blue)
+        \addplot+[
+            fill=myblue,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=2pt, text=myblue},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 47.8) +- (4.62,4.62)
+            (Low\\Off, 73.84) +- (7.64,7.64)
+            (High\\On, 31.75) +- (2.93,2.93)
+            (High\\Off, 73.88) +- (16.42,16.42)
+        };
+
+        \legend{SMMS, Thea, EDF}
+
+        % Custom label on the left
+        \draw
+          (axis description cs:-0.165,-0.19)
+          node[anchor=south west, align=left] {\footnotesize
+            \textbf{Workload:}\\
+            \textbf{Nuvem:}
+          };
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Taxa de Sucesso em função da carga de trabalho e da configuração da nuvem.}
+    \label{fig:results5}
+\end{figure}
+
+A Taxa de Sucesso no cumprimento dos prazos das requisições é apresentada na Figura \ref{fig:results5}. Essa métrica representa o percentual de requisições atendidas que foram concluídas dentro do limite de tempo estipulado (isto é, sem violar o SLA de latência). Ela pode ser calculada ao considerar a quantidade de requisições totais atendidas, presente na Figura \ref{fig:results3}, e calcular percentualmente quantas dessas não sofreram violação de SLA, baseado nos dados da Figura \ref{fig:results}.
+
+Os resultados ressaltam a eficiência do SMMS em manter um alto nível de conformidade aos SLAs. Em carga baixa (Low On/Off), o SMMS atingiu 95\% de sucesso, indicando que a grande maioria das requisições foram atendidas sem atrasos significativos. Mesmo em carga alta com nuvem ativa (High On), onde o SMMS enfrentou sua condição mais desafiadora, o algoritmo obteve cerca de 80\% de sucesso, ou seja, 4 em cada 5 requisições ainda respeitaram os prazos. Já o Thea teve desempenho insatisfatório nos cenários com nuvem: sua taxa de sucesso despencou para apenas \textasciitilde15\% em Low On e \textasciitilde9\% em High On, refletindo o grande número de violações de SLA de latência que observamos anteriormente (a maioria das requisições processadas pelo Thea com nuvem não conseguiu cumprir os prazos).
+
+Quando a nuvem está desligada, o Thea melhora substancialmente, alcançando cerca de 67\% de sucesso em Low Off e 90\% em High Off, pois elimina o overhead de comunicação remota e utiliza somente a borda, reduzindo as latências. O algoritmo EDF apresenta taxas de sucesso intermediárias: aproximadamente 48\% em Low On e 32\% em High On (melhor que o Thea nesses casos, mas bem abaixo do SMMS), e em torno de 74\% de sucesso nos cenários sem nuvem (Low Off e High Off), desempenho também inferior ao do SMMS porém mais próximo nestas condições. Em síntese, a Figura \ref{fig:results5} demonstra que o SMMS mantém um nível de qualidade de serviço muito mais consistente, garantindo a vasta maioria das requisições dentro dos prazos em todos os cenários, ao contrário do Thea, cujo compliance ao SLA varia drasticamente e cai para níveis críticos quando a nuvem é utilizada.

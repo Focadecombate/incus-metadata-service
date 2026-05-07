@@ -1,0 +1,144 @@
+\begin{thebibliography}{}
+
+\bibitem[{Amazon Web Services}, 2019]{aws_imdsv2_blog}
+{Amazon Web Services} (2019).
+\newblock Add defense in depth against open firewalls, reverse proxies, and
+  {SSRF} vulnerabilities with enhancements to the {EC2} instance metadata
+  service.
+
+\bibitem[{Amazon Web Services}, 2024a]{aws_imds}
+{Amazon Web Services} (2024a).
+\newblock Instance metadata and user data --- {Amazon EC2} documentation.
+
+\bibitem[{Amazon Web Services}, 2024b]{aws_imdsv2}
+{Amazon Web Services} (2024b).
+\newblock Use {IMDSv2} --- {Amazon EC2} documentation.
+
+\bibitem[Arta{\v{c}} et~al., 2017]{artac2017iac}
+Arta{\v{c}}, M., Borovšak, T., Di~Nitto, E., Guerriero, M., and Tamburri,
+  D.~A. (2017).
+\newblock Devops: Introducing infrastructure-as-code.
+\newblock {\em IEEE/ACM 39th International Conference on Software Engineering
+  Companion (ICSE-C)}, pages 497--498.
+
+\bibitem[Bollig et~al., 2018]{bollig2018leveraging}
+Bollig, E.~F., Allan, G.~T., Lynch, B.~J., Huerta, Y.~A., Mix, M., Munsell,
+  E.~A., Benson, R.~M., and Swartz, B. (2018).
+\newblock Leveraging {OpenStack} and {Ceph} for a controlled-access data cloud.
+\newblock In {\em Proceedings of the Practice and Experience on Advanced
+  Research Computing (PEARC '18)}, Pittsburgh, PA, USA. ACM.
+
+\bibitem[Bresnahan et~al., 2011]{bresnahan2011managing}
+Bresnahan, J., Freeman, T., LaBissoniere, D., and Keahey, K. (2011).
+\newblock Managing appliance launches in infrastructure clouds.
+\newblock In {\em Proceedings of the 2011 TeraGrid Conference: Extreme Digital
+  Discovery}, Salt Lake City, UT, USA. ACM.
+
+\bibitem[{Canonical Ltd.}, 2024a]{cloudinit2024}
+{Canonical Ltd.} (2024a).
+\newblock cloud-init documentation.
+
+\bibitem[{Canonical Ltd.}, 2024b]{cloudinit_ec2_ds}
+{Canonical Ltd.} (2024b).
+\newblock {EC2} datasource --- cloud-init documentation.
+
+\bibitem[{Canonical Ltd.}, 2024c]{cloudinit_lxd_ds}
+{Canonical Ltd.} (2024c).
+\newblock {LXD} datasource --- cloud-init documentation.
+
+\bibitem[{Canonical Ltd.}, 2024d]{lxd2024}
+{Canonical Ltd.} (2024d).
+\newblock {LXD} documentation.
+
+\bibitem[{Canonical Ltd.}, 2024e]{cloudinit_netv2}
+{Canonical Ltd.} (2024e).
+\newblock Networking config version 2 --- cloud-init documentation.
+
+\bibitem[{Canonical Ltd.}, 2024f]{cloudinit_nocloud}
+{Canonical Ltd.} (2024f).
+\newblock Nocloud --- cloud-init documentation.
+
+\bibitem[Cheshire et~al., 2005]{rfc3927}
+Cheshire, S., Aboba, B., and Guttman, E. (2005).
+\newblock Dynamic configuration of {IPv4} link-local addresses.
+\newblock RFC 3927, IETF.
+
+\bibitem[{Cloud Native Computing Foundation}, 2024a]{opentelemetry2024}
+{Cloud Native Computing Foundation} (2024a).
+\newblock {OpenTelemetry} --- an observability framework for cloud-native
+  software.
+
+\bibitem[{Cloud Native Computing Foundation}, 2024b]{prometheus2024}
+{Cloud Native Computing Foundation} (2024b).
+\newblock {Prometheus} --- monitoring system \& time series database.
+
+\bibitem[{Gin-Gonic Contributors}, 2024]{gin2024}
+{Gin-Gonic Contributors} (2024).
+\newblock Gin web framework.
+
+\bibitem[{Google Cloud}, 2024]{gcp_metadata}
+{Google Cloud} (2024).
+\newblock About {VM} metadata --- {Google Cloud} documentation.
+
+\bibitem[Gr{\"a}ber, 2023]{stgraber2023}
+Gr{\"a}ber, S. (2023).
+\newblock Incus as an alternative to {LXD}.
+
+\bibitem[Guerriero et~al., 2019]{guerriero2019iac}
+Guerriero, M., Garriga, M., Tamburri, D.~A., Palomba, F., and Lago, P. (2019).
+\newblock Adoption, support, and challenges of infrastructure-as-code: Insights
+  from industry.
+\newblock {\em IEEE International Conference on Software Maintenance and
+  Evolution (ICSME)}, pages 580--589.
+
+\bibitem[{HashiCorp}, 2024]{hashicorp_raft}
+{HashiCorp} (2024).
+\newblock hashicorp/raft --- golang implementation of the raft consensus
+  protocol.
+
+\bibitem[Hipp, 2024]{sqlite2024}
+Hipp, D.~R. (2024).
+\newblock {SQLite} --- small. fast. reliable. choose any three.
+
+\bibitem[{Linux Containers}, 2024]{incus2024}
+{Linux Containers} (2024).
+\newblock Incus --- system container and virtual machine manager.
+
+\bibitem[{Microsoft}, 2024]{azure_imds}
+{Microsoft} (2024).
+\newblock Azure instance metadata service.
+
+\bibitem[{MITRE Corporation}, 2021]{mitre_t1552_005}
+{MITRE Corporation} (2021).
+\newblock T1552.005: Unsecured credentials --- cloud instance metadata {API}.
+
+\bibitem[Novaes~Neto et~al., 2020]{novaes2020capital}
+Novaes~Neto, G., Madnick, S., Moraes, A., and Borges, N. (2020).
+\newblock A case study of the capital one data breach.
+\newblock {\em MIT Sloan School Working Paper}, (2020-07).
+
+\bibitem[Ongaro and Ousterhout, 2014]{ongaro2014raft}
+Ongaro, D. and Ousterhout, J. (2014).
+\newblock In search of an understandable consensus algorithm.
+\newblock In {\em 2014 USENIX Annual Technical Conference (USENIX ATC 14)},
+  pages 305--319.
+
+\bibitem[{OpenStack Foundation}, 2024]{openstack_metadata}
+{OpenStack Foundation} (2024).
+\newblock Metadata service --- {OpenStack} documentation.
+
+\bibitem[Sousa, 2018]{sousa2018computacao}
+Sousa, J. V.~d. (2018).
+\newblock {\em Computa{\c{c}}{\~a}o em Nuvem no Contexto das Smart Grids: Uma
+  Aplica{\c{c}}{\~a}o para Aux{\'\i}lio {\`a} Localiza{\c{c}}{\~a}o de Faltas
+  em Sistemas de Distribui{\c{c}}{\~a}o}.
+\newblock Tese de doutorado, Escola de Engenharia de S{\~a}o Carlos,
+  Universidade de S{\~a}o Paulo, S{\~a}o Carlos.
+
+\bibitem[Teppan et~al., 2022]{teppan2022survey}
+Teppan, H., Fl{\aa}, L.~H., and Jaatun, M.~G. (2022).
+\newblock A survey on infrastructure-as-code solutions for cloud development.
+\newblock In {\em 2022 IEEE 13th International Conference on Cloud Computing
+  Technology and Science (CloudCom)}, Bangkok, Thailand. IEEE.
+
+\end{thebibliography}

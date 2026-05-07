@@ -1,0 +1,94 @@
+
+\begin{figure}[ht!]
+    \centering
+    \footnotesize
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            clip=false,
+            symbolic x coords={
+                Low\\On,
+                Low\\Off,
+                High\\On,
+                High\\Off
+            },
+            xtick=data,
+            ymin=0,
+            ymax=400,
+            ylabel={Requisições},
+            bar width=20pt,
+            enlarge x limits=0.15,
+            xticklabel style={align=center},
+            width=12cm,
+            height=7cm,
+            legend style={at={(0.5,1.05)}, anchor=south, legend columns=-1}
+        ]
+        % SMMS (green)
+        \addplot+[
+            fill=mygreen,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=mygreen},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 342.0) +- (0.0,0.0)
+            (Low\\Off, 342.0) +- (0.0,0.0)
+            (High\\On, 341.0) +- (0.0,0.0)
+            (High\\Off, 282.0) +- (0.0,0.0)
+        };
+
+        % Thea (red)
+        \addplot+[
+            fill=myred,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=myred},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 327.3) +- (8.74,8.74)
+            (Low\\Off, 337.8) +- (5.51,5.51)
+            (High\\On, 333.4) +- (1.26,1.26)
+            (High\\Off, 281.0) +- (2.11,2.11)
+        };
+
+        % EDF (blue)
+        \addplot+[
+            fill=myblue,
+            draw=black,
+            nodes near coords,
+            every node near coord/.append style={font=\footnotesize, yshift=7pt, text=myblue},
+            error bars/.cd,
+            y dir=both,
+            y explicit,
+            error bar style={black}
+        ] coordinates {
+            (Low\\On, 337.3) +- (5.98,5.98)
+            (Low\\Off, 338.5) +- (5.76,5.76)
+            (High\\On, 336.8) +- (4.1,4.1)
+            (High\\Off, 290.4) +- (42.92,42.92)
+        };
+
+        \legend{SMMS, Thea, EDF}
+
+        % Custom label on the left
+        \draw
+          (axis description cs:-0.165,-0.19)
+          node[anchor=south west, align=left] {\footnotesize
+            \textbf{Workload:}\\
+            \textbf{Nuvem:}
+          };
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Quantidade de solicitações processadas, dentro de um total de 360, por carga de trabalho e configuração de nuvem.}
+    \label{fig:results3}
+\end{figure}
+
+A Figura \ref{fig:results3} apresenta o número de requisições atendidas (processadas) em cada cenário de carga e configuração de nuvem. Verifica-se que, na maioria dos casos, todos os algoritmos conseguiram processar mais que 90\% do total de 360 requisições geradas. Sob carga baixa (Low On e Low Off), o SMMS atendeu 342 requisições (95\% da demanda simulada), o que é levemente maior que os números do Thea (aprox. 327–338) e do EDF (\textasciitilde337). Isso indica que, com baixa carga, tanto a borda quanto a infraestrutura federada como um todo têm recursos suficientes para alocar todos os serviços em qualquer dos algoritmos, não ocorrendo rejeições de serviço. Em carga alta com nuvem ativa (High On), observa-se um comportamento similar: o SMMS processou 341 requisições, enquanto Thea e EDF atenderam cerca de 333–336 cada um. Ou seja, mesmo com alta demanda, a presença da nuvem assegurou que praticamente todos os pedidos fossem alocados em algum servidor, seja de borda ou na nuvem.
+
+A principal diferença surge no cenário de carga alta sem nuvem (High Off). Nessa condição mais crítica (muita demanda e recursos limitados apenas à borda), tanto o SMMS quanto o Thea processaram em média cerca de 281–282 requisições, ao passo que o EDF atendeu ligeiramente mais (aprox. 290). Esses valores inferiores ao total gerado indicam que algumas requisições não puderam ser servidas devido à falta de capacidade na borda, o que corresponde aos ``\textit{drops}'' (serviços sem alocação), indicados na Figura \ref{fig:results4}. O fato de o EDF ter atendido um pouco mais de requisições em média no cenário ``High Off'', em conjunto com suas barras de erro amplas, indicam variação considerável entre execuções e estão associados a sua heurística ter sido implementada com uma maior aleatoriedade na escolha dos servidores. Dessa forma, em alguns dos experimentos ele conseguiu alocar todos os serviços e atender mais requisições, enquanto em outros houveram até dois \textit{drops}.

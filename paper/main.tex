@@ -1,0 +1,87 @@
+\documentclass[12pt]{article}
+\usepackage{sbc-template} 
+\usepackage{graphicx,url}
+\usepackage{url}
+\usepackage[brazil]{babel} 
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}
+\renewcommand{\ttdefault}{lmtt}  % Latin Modern Typewriter (replaces missing Courier)
+\renewcommand{\sfdefault}{lmss} % Latin Modern Sans (replaces missing Helvetica)
+% Increase tolerance for line breaking to avoid overfull hboxes with \texttt
+\tolerance=2000
+\emergencystretch=3em
+\usepackage[normalem]{ulem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{multirow}    % Para mesclar células verticalmente
+\usepackage{array}       % Para melhor controle do alinhamento das colunas
+\usepackage{colortbl}    % Para colorir células
+\usepackage{xcolor}      % Para definir cores personalizadas
+\usepackage{pifont}      % Para os símbolos de checkmark e xmark
+\usepackage{tikz}
+\newcommand{\cmark}{\ding{51}} % Símbolo de check
+\newcommand{\xmark}{\ding{55}} % Símbolo de X
+
+\usepackage[square,authoryear]{natbib}
+\usepackage{amssymb} 
+% \usepackage{mathalfa}
+\usepackage{algorithm} 
+\usepackage{algpseudocode} 
+\usepackage[table]{xcolor}
+\definecolor{mygreen}{rgb}{0,0.7,0}
+\definecolor{myred}{rgb}{0.8,0,0}
+\definecolor{myblue}{rgb}{0,0,0.8}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{mdframed}
+\usepackage{listings}
+
+\usepackage{amsmath} 
+\usepackage{booktabs}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, fit, backgrounds, shapes.geometric, calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17} 
+\usepgfplotslibrary{groupplots}
+
+\urlstyle{same}
+
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\newcommand\Tstrut{\rule{0pt}{2.6ex}} 
+\newcommand\Bstrut{\rule[-0.9ex]{0pt}{0pt}} 
+\newcommand{\scell}[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+
+% \usepackage[nolist,nohyperlinks]{acronym}
+
+\title{Desenvolvimento de um Serviço de Metadata Compatível com Cloud-Init para Incus}
+
+\author{Gustavo Santos\inst{1}, Maycon L. M. Peixoto\inst{1}}
+
+\address{Departamento de Ciência da Computação – Universidade Federal da Bahia (UFBA)
+	\email{\{gustavoafs,mayconleone\}@ufba.br}
+}
+
+\begin{document} 
+	
+\maketitle
+
+\begin{abstract}
+    Public cloud providers offer instance metadata services that allow virtual machines and containers to discover their own configuration at boot time, enabling automated provisioning through cloud-init. However, private infrastructure managers such as Incus lack an equivalent native metadata service, forcing administrators to rely on manual configuration or ad-hoc solutions. This work presents the design and implementation of a cloud-init compatible metadata service for Incus, providing REST API endpoints for metadata, user-data, vendor-data, and network configuration delivery. The service uses event-driven architecture with periodic synchronization to maintain up-to-date instance information in a local database, identifying requesting instances by their source IP address. The proposed solution is evaluated in a real Incus environment, demonstrating functional compatibility with cloud-init and the ability to serve instance configuration transparently.
+\end{abstract}
+\begin{resumo}
+    Provedores de nuvem pública oferecem serviços de metadata de instância que permitem que máquinas virtuais e contêineres descubram sua própria configuração durante a inicialização, viabilizando o provisionamento automatizado por meio do cloud-init. No entanto, gerenciadores de infraestrutura privada como o Incus não possuem um serviço de metadata nativo equivalente, obrigando administradores a recorrer a configurações manuais ou soluções ad-hoc. Este trabalho apresenta o projeto e a implementação de um serviço de metadata compatível com cloud-init para Incus, fornecendo endpoints REST para entrega de metadata, user-data, vendor-data e configuração de rede. O serviço utiliza uma arquitetura orientada a eventos com sincronização periódica para manter informações atualizadas das instâncias em um banco de dados local, identificando as instâncias requisitantes pelo endereço IP de origem. A solução proposta é avaliada em um ambiente real com Incus, demonstrando compatibilidade funcional com o cloud-init e a capacidade de servir configurações de instância de forma transparente.
+\end{resumo}
+
+\input{sections/01_intro}
+\input{sections/02_relacionados}
+\input{sections/03_proposta}
+\input{sections/04_resultados}
+\input{sections/05_conclusao}
+
+\bibliographystyle{apalike}
+\bibliography{references}
+
+\end{document}

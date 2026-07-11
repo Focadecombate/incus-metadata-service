@@ -1,0 +1,146 @@
+#!/bin/bash
+# Zero-to-ready provisioning for the Incus cloud-init metadata service.
+# Runs once on first boot. Watch progress with:
+#   gcloud compute ssh incus-mds-test --tunnel-through-iap -- tail -f /var/log/mds-provision.log
+# Completion marker: /var/lib/mds/PROVISION_DONE
+set -uxo pipefail
+exec > >(tee -a /var/log/mds-provision.log) 2>&1
+echo "=== MDS provision start $(date -u) ==="
+
+REPO_URL="${repo_url}"
+REPO_REF="${repo_ref}"
+SERVICE_PORT="${service_port}"
+SEED_ALIAS="${seed_image_alias}"
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -y -qq curl jq git build-essential golang-go openssl iptables-persistent
+
+# --- Incus from the Zabbly repo ---------------------------------------------
+install -d /etc/apt/keyrings
+curl -fsSL https://pkgs.zabbly.com/key.asc -o /etc/apt/keyrings/zabbly.asc
+cat > /etc/apt/sources.list.d/zabbly-incus-stable.sources <<EOF
+Enabled: yes
+Types: deb
+URIs: https://pkgs.zabbly.com/incus/stable
+Suites: noble
+Components: main
+Signed-By: /etc/apt/keyrings/zabbly.asc
+EOF
+apt-get update -qq
+apt-get install -y -qq incus incus-tools
+incus admin init --minimal
+
+# --- Build the service ------------------------------------------------------
+install -d /opt
+if [ ! -d /opt/mds/.git ]; then
+  git clone "$REPO_URL" /opt/mds
+fi
+cd /opt/mds
+git fetch --all --quiet || true
+git checkout "$REPO_REF" || true
+git pull --quiet || true
+# go.mod is at the repo root; the server entrypoint is under metadata-service/.
+go build -o /usr/local/bin/metadata-service ./metadata-service/cmd/server
+echo "built metadata-service from $(git rev-parse --short HEAD)"
+
+# --- Incus HTTPS API + TLS trust for the service ----------------------------
+incus config set core.https_address 127.0.0.1:8443
+install -d /opt/mds-certs
+if [ ! -f /opt/mds-certs/client.crt ]; then
+  openssl req -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes \
+    -keyout /opt/mds-certs/client.key -out /opt/mds-certs/client.crt \
+    -subj "/CN=metadata-service"
+fi
+# add-certificate is idempotent-ish; ignore "already trusted"
+incus config trust add-certificate /opt/mds-certs/client.crt || true
+cp /var/lib/incus/server.crt /opt/mds-certs/server.crt
+chmod 600 /opt/mds-certs/client.key
+
+# --- Wire 169.254.169.254 -> the service ------------------------------------
+# Guests get a classless-static-route (DHCP option 121) to 169.254.169.254 via
+# the bridge, so the link-local IMDS address is actually routable at boot (the
+# usual Incus gotcha). A nat REDIRECT then sends :80 to the service port.
+BRIDGE_IP="$(incus network get incusbr0 ipv4.address | cut -d/ -f1)"
+incus network set incusbr0 raw.dnsmasq "dhcp-option=121,169.254.169.254/32,$BRIDGE_IP"
+ip addr add 169.254.169.254/32 dev incusbr0 2>/dev/null || true
+iptables -t nat -C PREROUTING -i incusbr0 -d 169.254.169.254 -p tcp --dport 80 -j REDIRECT --to-port "$SERVICE_PORT" 2>/dev/null \
+  || iptables -t nat -A PREROUTING -i incusbr0 -d 169.254.169.254 -p tcp --dport 80 -j REDIRECT --to-port "$SERVICE_PORT"
+netfilter-persistent save || true
+
+# Re-add the bridge IP + route on every boot (they don't persist otherwise).
+cat > /etc/systemd/system/mds-imds-route.service <<EOF
+[Unit]
+Description=Re-apply 169.254.169.254 IMDS wiring on incusbr0
+After=incus.service network-online.target
+Requires=incus.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'ip addr add 169.254.169.254/32 dev incusbr0 2>/dev/null || true'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable mds-imds-route.service
+
+# --- systemd unit for the service -------------------------------------------
+install -d /var/lib/mds
+cat > /etc/systemd/system/metadata-service.service <<EOF
+[Unit]
+Description=Incus cloud-init metadata service
+After=incus.service
+Requires=incus.service
+
+[Service]
+Environment=INCUS_CONFIG_SERVER_URL=https://127.0.0.1:8443
+Environment=INCUS_CONFIG_TLS_CLIENT_CERT=/opt/mds-certs/client.crt
+Environment=INCUS_CONFIG_TLS_CLIENT_KEY=/opt/mds-certs/client.key
+Environment=INCUS_CONFIG_TLS_SERVER_CERT=/opt/mds-certs/server.crt
+Environment=DATABASE_CONFIG_DB_SOURCE=/var/lib/mds/metadata.db
+Environment=PORT=$SERVICE_PORT
+Environment=INTERNAL_ADDR=127.0.0.1:8081
+WorkingDirectory=/var/lib/mds
+ExecStart=/usr/local/bin/metadata-service
+Restart=on-failure
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl enable --now metadata-service
+
+# Wait for the service to answer its health check.
+for i in $(seq 1 30); do
+  if curl -fsS "http://127.0.0.1:$SERVICE_PORT/health" >/dev/null 2>&1; then
+    echo "service healthy"; break
+  fi
+  sleep 2
+done
+
+# --- Build the reusable seed image with the NoCloud drop-in -----------------
+if ! incus image info "$SEED_ALIAS" >/dev/null 2>&1; then
+  incus launch images:ubuntu/24.04/cloud mds-seed
+  incus exec mds-seed -- cloud-init status --wait >/dev/null 2>&1 || true
+  incus exec mds-seed -- apt-get update -qq || true
+  incus exec mds-seed -- apt-get install -y -qq curl || true
+  incus exec mds-seed -- mkdir -p /etc/cloud/cloud.cfg.d
+  incus exec mds-seed -- tee /etc/cloud/cloud.cfg.d/90-nocloud-net.cfg >/dev/null <<'CFG'
+datasource_list: [ NoCloud ]
+datasource:
+  NoCloud:
+    seedfrom: http://169.254.169.254/configs/
+CFG
+  incus exec mds-seed -- cloud-init clean --logs
+  incus stop mds-seed
+  incus publish mds-seed --alias "$SEED_ALIAS"
+  incus delete mds-seed
+  echo "published seed image: $SEED_ALIAS"
+fi
+
+date -u > /var/lib/mds/PROVISION_DONE
+echo "=== MDS provision complete $(date -u) ==="
+echo "Smoke test: incus launch $SEED_ALIAS t1 && incus exec t1 -- cloud-init status --wait --long"

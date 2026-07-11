@@ -1,0 +1,19 @@
+# Copy to terraform.tfvars and adjust. All values have sensible defaults.
+
+project_id = "mythical-rope-502122-k2"
+region     = "us-central1"
+zone       = "us-central1-a"
+
+# Path A (recommended, containers only) — cheapest, no nested virt:
+machine_type                 = "e2-standard-4"
+enable_nested_virtualization = false
+
+# Path B (also run Incus VMs) — uncomment:
+# machine_type                 = "n2-standard-4"
+# enable_nested_virtualization = true
+
+# Cost saver for short runs (skip for the scalability sweep):
+# use_spot = true
+
+# Direct SSH from your workstation instead of IAP — add your public IP:
+# ssh_source_ranges = ["35.235.240.0/20", "YOUR.IP.ADD.RESS/32"]

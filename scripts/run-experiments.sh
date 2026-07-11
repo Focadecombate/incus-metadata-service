@@ -316,7 +316,7 @@ experiment_S() {
     # let the newest instances sync so they're real 200-returning records
     sleep "$SYNC_WAIT"
     read -r p50 p95 p99 nok ntot < <(run_hey "$LOADGEN" "meta-data" "$sdir/hey-n$N.csv" "$REQUESTS" "$CONCURRENCY")
-    local err; err=$(awk -v o="$nok" -v t="$ntot" 'BEGIN{printf "%.2f", t>0?(100*(t-o)/t):0}')
+    local err; err=$(awk -v o="$nok" -v t="$ntot" 'BEGIN{ if (t>0) printf "%.2f", 100*(t-o)/t; else printf "0.00" }')
     local la; la=$(awk '{print $1}' /proc/loadavg)
     local mem; mem=$(free -m | awk '/^Mem:/{print $3}')
     echo "$N,$p50,$p95,$p99,$nok,$ntot,$err,$la,$mem" >> "$sdir/scalability.csv"

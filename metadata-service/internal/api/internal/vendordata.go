@@ -42,8 +42,9 @@ func (h Handler) UpdateVendorData(c *gin.Context) {
 	}
 
 	update := db.UpdateVendorDataParams{
-		ID:   vendorData.ID,
-		Data: data,
+		ID:          vendorData.ID,
+		Data:        data,
+		Description: vendorData.Description,
 	}
 
 	// Update the vendor data in the database

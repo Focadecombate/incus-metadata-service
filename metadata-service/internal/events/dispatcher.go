@@ -215,11 +215,18 @@ func (em *EventManager) handleInstanceCreated(ctx context.Context, args map[stri
 		Str("instance", instanceName).
 		Msg("Processing instance created event")
 
-	// TODO: Add actual instance creation logic here
-	
-	return GoEventBus.Result{
-		Message: "Instance created successfully",
-	}, nil
+	// Fetch the full instance from Incus and delegate to the same per-instance
+	// sync path, closing the boot-race window where a freshly-created instance
+	// requests metadata before the periodic full sync has run.
+	full, _, err := em.app.Incus.GetInstanceFull(instanceName)
+	if err != nil {
+		handlerLogger.Error().Err(err).Msg("Failed to fetch created instance from Incus")
+		return GoEventBus.Result{
+			Message: "Failed to fetch created instance",
+		}, fmt.Errorf("failed to fetch created instance %q: %w", instanceName, err)
+	}
+
+	return em.handleInstanceSync(ctx, map[string]any{"instance": *full})
 }
 
 // extractNetworkAddresses extracts IPv4 and IPv6 addresses, MAC addresses, and interface
@@ -463,12 +470,13 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 				addresses = append(addresses, iface.IPv6)
 			}
 
-			ethernets[iface.Name] = types.Ethernet{
-				Match: types.Match{
-					MacAddress: iface.Hwaddr,
-				},
+			eth := types.Ethernet{
 				Addresses: addresses,
 			}
+			if iface.Hwaddr != "" {
+				eth.Match = &types.Match{MacAddress: iface.Hwaddr}
+			}
+			ethernets[iface.Name] = eth
 		}
 
 		networkConfig := types.NetworkConfig{
@@ -650,7 +658,49 @@ func (em *EventManager) handleInstancesSync(ctx context.Context, args map[string
 		Int("events_published", len(instances)).
 		Msg("Successfully published all instance sync events")
 
+	// Reconcile: soft-delete DB instances that no longer exist in Incus so a
+	// reused IP is never served a decommissioned instance's secrets.
+	em.reconcileDeletedInstances(ctx, instances, handlerLogger)
+
 	return GoEventBus.Result{
 		Message: fmt.Sprintf("Successfully triggered sync for %d instances", len(instances)),
 	}, nil
+}
+
+// reconcileDeletedInstances soft-deletes DB instances absent from the current
+// Incus listing. It runs on the leader only (handleInstancesSync is leader-gated).
+//
+// NOTE: the soft-delete is written directly to the local DB rather than through
+// RAFT, because the consensus layer has no CmdDeleteInstance command. This is
+// correct for single-node and non-RAFT deployments; replicating reconciliation
+// deletes across a RAFT cluster would require adding a delete command to the
+// consensus package.
+func (em *EventManager) reconcileDeletedInstances(ctx context.Context, instances []incus.InstanceFull, handlerLogger zerolog.Logger) {
+	live := make(map[string]struct{}, len(instances))
+	for _, instance := range instances {
+		live[instance.Project+"/"+instance.Name] = struct{}{}
+	}
+
+	dbInstances, err := em.app.Database.ListInstances(ctx)
+	if err != nil {
+		handlerLogger.Error().Err(err).Msg("Failed to list DB instances for reconciliation")
+		return
+	}
+
+	for _, dbInstance := range dbInstances {
+		if _, ok := live[dbInstance.Project+"/"+dbInstance.Name]; ok {
+			continue
+		}
+		if err := em.app.Database.DeleteInstance(ctx, dbInstance.ID); err != nil {
+			handlerLogger.Error().Err(err).
+				Str("instance_name", dbInstance.Name).
+				Str("instance_project", dbInstance.Project).
+				Msg("Failed to soft-delete stale instance")
+			continue
+		}
+		handlerLogger.Info().
+			Str("instance_name", dbInstance.Name).
+			Str("instance_project", dbInstance.Project).
+			Msg("Soft-deleted stale instance no longer present in Incus")
+	}
 }

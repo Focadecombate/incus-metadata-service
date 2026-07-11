@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"slices"
 
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/content_types"
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
@@ -20,6 +19,10 @@ func (h *Handler) AllMetadataHandler(c *gin.Context) {
 	row, err := h.Database.GetInstanceMetadataByIP(c, &clientIP)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			// A 404 here makes cloud-init skip the whole datasource, which is
+			// the correct signal for an unknown IP. Caveat: during a sync race
+			// a freshly-created instance may briefly 404 before its metadata
+			// row is written; that is tolerated as a transient miss.
 			c.JSON(http.StatusNotFound, gin.H{"error": "no metadata found for this instance"})
 			return
 		}
@@ -35,13 +38,10 @@ func (h *Handler) AllMetadataHandler(c *gin.Context) {
 		return
 	}
 
-	requested_content_type := c.GetHeader("Accept")
-
-	if !content_types.ValidateContentType(c, requested_content_type, [][]string{content_types.JsonContentTypes, content_types.YamlContentTypes}) {
-		return
-	}
-
-	if slices.Contains(content_types.JsonContentTypes, requested_content_type) {
+	// cloud-init parses meta-data with yaml.safe_load and sends "Accept: */*".
+	// The documented contract is a YAML file, so YAML is the default; JSON is
+	// only served when explicitly requested. Missing/compound Accept never 406s.
+	if content_types.WantsJSON(c.GetHeader("Accept")) {
 		c.JSON(http.StatusOK, metadata)
 		return
 	}
@@ -92,13 +92,7 @@ func (h *Handler) MetadataByKeyHandler(c *gin.Context) {
 		return
 	}
 
-	requested_content_type := c.GetHeader("Accept")
-
-	if !content_types.ValidateContentType(c, requested_content_type, [][]string{content_types.JsonContentTypes, content_types.YamlContentTypes}) {
-		return
-	}
-
-	if slices.Contains(content_types.JsonContentTypes, requested_content_type) {
+	if content_types.WantsJSON(c.GetHeader("Accept")) {
 		c.JSON(http.StatusOK, value)
 		return
 	}

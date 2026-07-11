@@ -40,9 +40,11 @@ func (h *Handler) VendorDataHandler(c *gin.Context) {
 
 	// Fall back to global vendor-data
 	vendorData, err := h.Database.GetVendorData(c, "default")
-	if err == sql.ErrNoRows {
-		logs.Logger.Info().Msg("No vendor data found, returning empty response")
-		c.JSON(http.StatusOK, gin.H{})
+	if errors.Is(err, sql.ErrNoRows) {
+		// No per-instance and no global vendor-data. cloud-init tolerates a
+		// vendor-data 404 cleanly, whereas a bare "{}" body triggers warnings.
+		logs.Logger.Info().Msg("No vendor data found, returning 404")
+		c.JSON(http.StatusNotFound, gin.H{"error": "no vendor data found"})
 		return
 	}
 

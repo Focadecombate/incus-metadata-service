@@ -51,6 +51,8 @@ type OtelConfig struct {
 type Config struct {
 	// Port is the port on which the metadata service will run.
 	Port string `env:"PORT,default=8080"`
+	// InternalAddr is the host-only bind address for internal mutation routes.
+	InternalAddr string `env:"INTERNAL_ADDR,default=127.0.0.1:8081"`
 	// LogLevel sets the logging level for the service.
 	LogLevel zerolog.Level `env:"LOG_LEVEL,default=info"`
 	// Incus contains the configuration for connecting to the Incus server.

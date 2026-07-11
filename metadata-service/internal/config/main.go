@@ -35,8 +35,9 @@ type RaftConfig struct {
 	BindAddr string `env:"BIND_ADDR,default=localhost:7000"`
 	// DataDir is the directory for RAFT log and snapshot storage.
 	DataDir string `env:"DATA_DIR,default=raft-data"`
-	// Peers is a comma-separated list of peer addresses.
-	Peers []string `env:"PEERS,delimiter=,"`
+	// Peers is a comma-separated list of peer addresses (comma is go-envconfig's
+	// default slice delimiter).
+	Peers []string `env:"PEERS"`
 	// Bootstrap indicates whether this node should bootstrap a new cluster.
 	Bootstrap bool `env:"BOOTSTRAP,default=false"`
 }

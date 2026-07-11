@@ -136,18 +136,26 @@ trap cleanup EXIT
 # ---------------------------------------------------------------------------
 # Load generator setup (installs hey into a dedicated container)
 # ---------------------------------------------------------------------------
-HEY_URL="https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64"
+# Obtain a `hey` binary for the load container. Prefer HEY_BIN, else build it
+# with the host Go toolchain (public download hosts are unreliable), and push it.
+ensure_hey_bin() {
+  [ -n "$HEY_BIN" ] && [ -f "$HEY_BIN" ] && return 0
+  local built="/tmp/mds-hey"
+  if [ -f "$built" ]; then HEY_BIN="$built"; return 0; fi
+  command -v go >/dev/null || { fail "no HEY_BIN and no Go toolchain to build hey"; return 1; }
+  info "Building hey with the host Go toolchain ..."
+  HOME="${HOME:-/root}" GOBIN=/tmp go install github.com/rakyll/hey@latest 2>/dev/null \
+    && [ -f /tmp/hey ] && mv /tmp/hey "$built" && HEY_BIN="$built" && return 0
+  fail "failed to build hey"; return 1
+}
+
 setup_loadgen() {
   log "Preparing load generator container ($LOADGEN)"
+  ensure_hey_bin || exit 1
   incus info "$LOADGEN" >/dev/null 2>&1 || launch "$LOADGEN"
-  wait_synced "$LOADGEN" || { fail "$LOADGEN did not sync — check DNAT/wiring"; exit 1; }
+  wait_synced "$LOADGEN" || { fail "$LOADGEN did not sync — check wiring"; exit 1; }
   if ! incus exec "$LOADGEN" -- test -x /root/hey; then
-    if [ -n "$HEY_BIN" ] && [ -f "$HEY_BIN" ]; then
-      incus file push "$HEY_BIN" "$LOADGEN/root/hey"
-    else
-      info "Downloading hey into $LOADGEN ..."
-      incus exec "$LOADGEN" -- sh -c "curl -fsSL '$HEY_URL' -o /root/hey || (apt-get update -qq && apt-get install -y -qq curl && curl -fsSL '$HEY_URL' -o /root/hey)"
-    fi
+    incus file push "$HEY_BIN" "$LOADGEN/root/hey"
     incus exec "$LOADGEN" -- chmod +x /root/hey
   fi
   incus exec "$LOADGEN" -- /root/hey -n 1 -c 1 "$IMDS_URL/meta-data" >/dev/null 2>&1 \

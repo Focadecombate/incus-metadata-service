@@ -69,6 +69,7 @@ resource "google_compute_instance" "mds" {
     repo_ref         = var.repo_ref
     service_port     = var.service_port
     seed_image_alias = var.seed_image_alias
+    bridge_cidr      = var.bridge_cidr
   })
 
   lifecycle {

@@ -20,12 +20,11 @@ HashiCorp Raft HA mode. It is the subject of the TCC in `paper/`.
 
 ## Readiness verdict
 
-**Code fixes applied; ready for VM validation.** All blocking cloud-init, security,
-and reliability issues below have been fixed and the module builds/vets/tests clean
-(`go build/vet/test ./...` green; the public serving path now has its first real test
-suite). The next step is to run the smoke test in `docs/testing-plan.md` on a VM — a
-real cloud-init boot is the only thing that can confirm end-to-end compatibility, so
-treat "ready" as "ready to validate", not "validated".
+**Validated on GCP — a real cloud-init boot provisions from the service.** All
+blocking cloud-init, security, and reliability issues below are fixed, the module
+builds/vets/tests clean, and the end-to-end smoke test passes on a GCP VM (see "VM
+validation" below). What remains is to run the F/P/S experiments
+(`scripts/run-experiments.sh`) and fill in Section 4 of the paper.
 
 Note for the performance experiments: SQLite is now opened with WAL + a 5 s busy
 timeout and `SetMaxOpenConns(1)` (safest — serializes access, no `SQLITE_BUSY`). That
@@ -33,6 +32,41 @@ single connection serializes reads too, so the scalability curve may be shaped b
 connection serialization as much as by SQLite itself. Decide before measuring whether
 to keep `maxconns=1` (matches the paper's "write-serialization" hypothesis) or raise it
 under WAL to allow concurrent readers — and report which you used.
+
+## VM validation (GCP, 2026-07-11)
+
+Provisioned via `terraform/` on a GCP `e2-standard-4` (Ubuntu 24.04) and driven a
+real cloud-init boot end to end. **Smoke test passes:** a container boots, selects
+`DataSourceNoCloudNet`, fetches from the service, and `cloud-init status` = `done`
+(`meta-data` 200 with the container's own `instance-id`/`local-hostname`,
+`user-data` 200). This validates the config fix, Incus HTTPS cert auth, datasource
+selection, and addressing together.
+
+Three issues were found and resolved during bring-up — the first is a code bug
+(now in the PR); the other two are **findings worth citing in the thesis**:
+
+1. **`LoadConfig()` failed on every startup** (code bug, fixed). The Raft `PEERS`
+   env tag was malformed (`env:"PEERS,delimiter=,"`); go-envconfig splits the tag
+   on commas, producing an "unknown option" error. Because it fails before the
+   logger is initialised, the binary exited 1 with no output. The service could
+   never have started as shipped. Fixed + regression test.
+2. **`169.254.169.254` collides with the cloud provider's own metadata server**
+   on GCP (and AWS/Azure). Binding/routing it on the host broke the VM's DNS.
+   Resolution: point cloud-init's `seedfrom` at the **Incus bridge gateway**
+   (`http://10.10.10.1:8080/configs/`) — always reachable, no DNAT, no conflict.
+   *Implication for the paper: the IMDS `169.254.169.254` convention is not usable
+   as-is on public-cloud hosts; a bridge-local address is required there.*
+3. **NoCloud-only creates a network bootstrap deadlock.** Incus normally supplies
+   network config via the LXD datasource (over the local socket, no network
+   needed). Forcing `datasource_list: [NoCloud]` removes that, so the container
+   can't get an IP to reach the seed. Resolution: bake an unconditional DHCP
+   netplan into the image and disable cloud-init's network management, so the
+   interface comes up independent of the datasource.
+   *Implication for the paper: a network metadata service cannot be the sole
+   datasource without an out-of-band mechanism to bring up the network first.*
+
+All fixes are captured in `terraform/startup.sh.tftpl` (reproducible via
+`terraform apply`), so the running VM is no longer a hand-patched one-off.
 
 ## Findings and status
 

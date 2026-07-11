@@ -74,6 +74,17 @@ variable "seed_image_alias" {
   default     = "mds-ubuntu-2404"
 }
 
+variable "bridge_cidr" {
+  description = <<-EOT
+    Deterministic address/CIDR for the Incus bridge (incusbr0). Guests reach the
+    metadata service at this gateway IP (e.g. http://10.10.10.1:8080/configs/).
+    Do NOT use 169.254.169.254 on a cloud VM — it is the provider's own metadata
+    server and hijacking it breaks the host's DNS.
+  EOT
+  type        = string
+  default     = "10.10.10.1/24"
+}
+
 variable "labels" {
   description = "Labels applied to the instance."
   type        = map(string)

@@ -26,7 +26,9 @@ set -euo pipefail
 # Configuration (override via environment)
 # ---------------------------------------------------------------------------
 IMAGE="${IMAGE:-mds-ubuntu-2404}"              # reusable image with NoCloud drop-in
-IMDS_URL="${IMDS_URL:-http://169.254.169.254/configs}"  # what guests fetch
+# Guests reach the service at the Incus bridge gateway. On a cloud VM do NOT use
+# 169.254.169.254 — it is the provider's own metadata server (see docs).
+IMDS_URL="${IMDS_URL:-http://10.10.10.1:8080/configs}"   # what guests fetch (bridge gateway)
 MDS_HEALTH_URL="${MDS_HEALTH_URL:-http://127.0.0.1:8080/health}"  # host-side health check
 SYNC_WAIT="${SYNC_WAIT:-15}"                   # seconds > cron interval (10s) to let a new instance sync
 SCALE_STEPS="${SCALE_STEPS:-5 10 25 50}"       # container counts for the scalability sweep

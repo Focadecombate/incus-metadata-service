@@ -14,7 +14,12 @@ const createInstance = `-- name: CreateInstance :one
 INSERT INTO
   instances (name, project, ip_address)
 VALUES
-  (?, ?, ?) RETURNING id, name, project, ip_address, created_at, updated_at, deleted_at
+  (?, ?, ?) ON CONFLICT(name, project) DO
+UPDATE
+SET
+  ip_address = excluded.ip_address,
+  deleted_at = NULL,
+  updated_at = CURRENT_TIMESTAMP RETURNING id, name, project, ip_address, created_at, updated_at, deleted_at
 `
 
 type CreateInstanceParams struct {

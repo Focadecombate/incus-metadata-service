@@ -41,7 +41,12 @@ WHERE
 INSERT INTO
   instances (name, project, ip_address)
 VALUES
-  (?, ?, ?) RETURNING *;
+  (?, ?, ?) ON CONFLICT(name, project) DO
+UPDATE
+SET
+  ip_address = excluded.ip_address,
+  deleted_at = NULL,
+  updated_at = CURRENT_TIMESTAMP RETURNING *;
 
 -- name: GetInstance :one
 SELECT

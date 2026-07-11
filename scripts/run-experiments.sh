@@ -127,7 +127,7 @@ wait_synced() { # container — block until its meta-data returns 200 or timeout
 cleanup() {
   [ "$KEEP_INSTANCES" = "1" ] && { log "KEEP_INSTANCES=1 — leaving instances"; return; }
   log "Cleaning up ${PREFIX}-* instances"
-  incus list -c n --format csv | grep "^${PREFIX}" | while read -r n; do
+  for n in $(incus list -c n --format csv | grep "^${PREFIX}" || true); do
     incus delete --force "$n" >/dev/null 2>&1 || true
   done
 }
@@ -302,7 +302,7 @@ experiment_S() {
   local sdir="$OUTDIR/scalability"; mkdir -p "$sdir"
   setup_loadgen
   # Clear any functional/perf leftovers so N reflects only the sweep + load gen.
-  incus list -c n --format csv | grep "^${PREFIX}" | grep -v "^${LOADGEN}$" | while read -r n; do
+  for n in $(incus list -c n --format csv | grep "^${PREFIX}" | grep -v "^${LOADGEN}$" || true); do
     incus delete --force "$n" >/dev/null 2>&1 || true
   done
   echo "n_instances,p50_ms,p95_ms,p99_ms,ok,total,err_pct,loadavg_1m,mem_used_mb" > "$sdir/scalability.csv"

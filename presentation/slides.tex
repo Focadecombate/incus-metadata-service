@@ -1,0 +1,455 @@
+\documentclass[aspectratio=169,xcolor=table]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{csquotes}
+\usepackage{xcolor}
+\usepackage[portuguese]{babel}
+\usepackage{booktabs}
+\usepackage{pifont}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, fit, backgrounds, calc}
+\usetheme{DCC}
+\graphicspath{{imgs/}}
+
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\author{Gustavo Santos \\ \vspace{0.2cm} {\small Orientador: Prof. Maycon L. M. Peixoto}}
+\title{Desenvolvimento de um Serviço de Metadata Compatível com Cloud-Init para Incus}
+\institute{Departamento de Ciência da Computação -- Universidade Federal da Bahia}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}[plain,noframenumbering]
+    \titlepage
+\end{frame}
+
+\begin{frame}[plain,noframenumbering]{Agenda}
+    \tableofcontents
+\end{frame}
+
+% =====================================================================
+\section{Introdução}
+\sectionframe
+
+\begin{frame}{Contexto}
+    \begin{itemize}
+        \item Nuvens públicas (AWS, GCP, Azure) provisionam instâncias de forma
+              programática e automatizada.
+        \item Peça central: \textit{Instance Metadata Service} (IMDS), acessível pelo
+              endereço \textit{link-local} \texttt{169.254.169.254}~\cite{aws_imds}.
+        \item Cada instância descobre a própria configuração no \textit{boot}:
+              hostname, endereços IP, chaves SSH, \textit{user-data}.
+        \item O \textbf{cloud-init}~\cite{cloudinit2024} consome esses dados e é o
+              padrão da indústria para inicialização automatizada de instâncias.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Problema}
+    \begin{itemize}
+        \item O \textbf{Incus}~\cite{incus2024} (\textit{fork} comunitário do LXD) não
+              oferece um serviço de metadados HTTP nativo.
+        \item A entrega de configuração existente (\textit{datasource} LXD via
+              \textit{socket} \texttt{/dev/incus/sock}) sofre uma \textbf{condição de
+              corrida}: o \textit{Incus agent} inicia tarde demais para os primeiros
+              estágios do cloud-init em VMs.
+        \item Consequências:
+        \begin{itemize}
+            \item configuração manual ou \textit{scripts} ad hoc;
+            \item sem portabilidade de configurações entre nuvem pública e privada;
+            \item OpenStack resolve, mas exige a plataforma completa — desproporcional
+                  para \textit{homelabs}, borda e nuvens privadas pequenas.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Objetivo e Contribuições}
+    \textbf{Objetivo:} projetar e implementar um serviço de metadados compatível com
+    cloud-init para o Incus, leve e autônomo.
+    \vspace{0.4cm}
+    \begin{enumerate}
+        \item Análise das implementações de serviços de metadados em nuvens públicas e
+              privadas e dos requisitos mínimos de compatibilidade com o cloud-init.
+        \item Projeto e implementação do serviço: API REST, sincronização de
+              instâncias orientada a eventos, persistência e alta disponibilidade.
+        \item Avaliação em ambiente Incus real: corretude funcional, desempenho,
+              escalabilidade e \textit{failover}.
+    \end{enumerate}
+\end{frame}
+
+% =====================================================================
+\section{Trabalhos Relacionados}
+\sectionframe
+
+\begin{frame}{Serviços de Metadados Existentes}
+    \begin{itemize}
+        \item \textbf{AWS IMDS}~\cite{aws_imds}: API HTTP em \texttt{169.254.169.254};
+              IMDSv2 adiciona autenticação por sessão contra SSRF.
+        \item \textbf{GCP Metadata Server}~\cite{gcp_metadata}: exige o cabeçalho
+              \texttt{Metadata-Flavor: Google}; escopos de projeto e de instância.
+        \item \textbf{OpenStack Metadata}~\cite{openstack_metadata}: compatível com a
+              API EC2, mas fortemente acoplado ao Neutron e ao Nova — não executa de
+              forma autônoma.
+        \item \textbf{Datasource NoCloud}~\cite{cloudinit_nocloud}: obtém dados de uma
+              URL base (\texttt{seedfrom}) consultando \texttt{/meta-data},
+              \texttt{/user-data}, \texttt{/vendor-data} e \texttt{/network-config} —
+              exige apenas \texttt{instance-id} e \texttt{local-hostname}.
+        \item \textbf{RAFT}~\cite{ongaro2014raft}: consenso distribuído compreensível
+              (eleição de líder + replicação de log); base da alta disponibilidade.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Comparação entre as Abordagens}
+    \begin{table}
+        \centering
+        \small
+        \renewcommand{\arraystretch}{1.2}
+        \def\cellZ{\cellcolor{black!10}\xmark}
+        \def\cellO{\cmark}
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{lcccccc}
+            \toprule
+            \textbf{Solução} & \textbf{Autônomo} & \textbf{Compat. cloud-init} &
+            \textbf{Contêineres} & \textbf{VMs} & \textbf{Alta Disp.} & \textbf{Cód. Aberto} \\
+            \midrule
+            AWS IMDS            & \cellZ & \cellO & \cellZ & \cellO & \cellO & \cellZ \\
+            GCP Metadata        & \cellZ & \cellO & \cellZ & \cellO & \cellO & \cellZ \\
+            OpenStack Metadata  & \cellZ & \cellO & \cellZ & \cellO & \cellO & \cellO \\
+            LXD/Incus (atual)   & \cellO & \cellZ & \cellO & \cellO & \cellZ & \cellO \\
+            \textbf{Este trabalho} & \cellO & \cellO & \cellO & \cellO & \cellO & \cellO \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+    \vspace{0.3cm}
+    \textbf{Lacuna:} não há serviço de metadados leve e autônomo que implemente o
+    protocolo HTTP esperado pelo cloud-init para o Incus.
+\end{frame}
+
+% =====================================================================
+\section{Proposta}
+\sectionframe
+
+\begin{frame}{Visão Geral}
+    \begin{itemize}
+        \item Serviço de metadados compatível com cloud-init para instâncias Incus
+              (contêineres e VMs).
+        \item API REST consultada pelas instâncias durante o \textit{boot}, seguindo o
+              modelo do \textit{datasource} NoCloud HTTP.
+        \item A instância é identificada pelo \textbf{endereço IP de origem} da
+              requisição — sem agentes ou configuração dentro da instância.
+        \item Sincronização orientada a eventos mantém o estado consistente com o
+              hipervisor Incus.
+        \item Implantação autônoma: um único binário Go, banco embutido, sem
+              dependências externas.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Arquitetura}
+    \begin{figure}
+        \centering
+        \resizebox{!}{0.72\textheight}{%
+        \begin{tikzpicture}[
+            node distance=1.6cm and 2.2cm,
+            every node/.style={font=\small},
+            box/.style={draw, rounded corners=3pt, minimum width=3cm, minimum height=1cm, align=center, fill=white, thick},
+            extbox/.style={draw, rounded corners=3pt, minimum width=3cm, minimum height=1cm, align=center, fill=black!8, thick},
+            groupbox/.style={draw, dashed, rounded corners=6pt, inner sep=14pt, thick, fill=white},
+            arr/.style={-{Stealth[length=6pt]}, thick},
+        ]
+            \node[extbox] (incus) {Incus API};
+            \node[extbox, right=7cm of incus] (instances) {Instâncias\\(VMs / Contêineres)};
+
+            \node[box, below=1.8cm of $(incus)!0.5!(instances)$] (server) {\textbf{cmd/server}\\Inicialização};
+
+            \node[box, below left=1.6cm and 2.0cm of server] (events) {\textbf{events}\\Cron + EventBus};
+            \node[box, below right=1.6cm and 2.0cm of server] (api) {\textbf{api}\\Gin (REST)};
+
+            \node[box, below=1.8cm of $(events)!0.5!(api)$] (storage) {\textbf{storage}\\SQLite + SQLC};
+            \node[box, left=2.0cm of storage] (consensus) {\textbf{consensus}\\RAFT};
+            \node[box, right=2.0cm of storage] (telemetry) {\textbf{telemetry}\\OTel + Prometheus};
+
+            \begin{scope}[on background layer]
+                \node[groupbox, fill=blue!3,
+                      fit=(server)(events)(api)(storage)(consensus)(telemetry),
+                      label={[font=\footnotesize\bfseries, anchor=north west, yshift=-3pt]north west:Serviço de Metadados}] (service) {};
+            \end{scope}
+
+            \draw[arr, gray] (server) -- (events);
+            \draw[arr, gray] (server) -- (api);
+            \draw[arr] (incus.south) -- node[right, font=\scriptsize, pos=0.35] {consulta instâncias} ++(0,-1.0) -| (events.north);
+            \draw[arr] (instances.south) -- node[left, font=\scriptsize, pos=0.35] {GET /configs/*} ++(0,-1.0) -| (api.north);
+            \draw[arr] (events.south east) -- node[right, font=\scriptsize, pos=0.4] {escrita} (storage.north west);
+            \draw[arr] (api.south west) -- node[left, font=\scriptsize, pos=0.4] {leitura} (storage.north east);
+            \draw[arr] (events.south west) -- node[left, font=\scriptsize, pos=0.4] {replica} (consensus.north);
+            \draw[arr] (consensus.east) -- node[below, font=\scriptsize] {aplica} (storage.west);
+            \draw[arr, gray, dashed] (events.south east) -- (telemetry.north west);
+            \draw[arr, gray, dashed] (api.south east) -- node[right, font=\scriptsize, pos=0.3, text=gray] {métricas} (telemetry.north);
+        \end{tikzpicture}%
+        }
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Sincronização de Instâncias}
+    Ciclo periódico e orientado a eventos (\textit{pub/sub}):
+    \begin{enumerate}
+        \item \textit{Cron} a cada 10~s publica o evento \texttt{instances.sync}.
+        \item O \textit{handler} consulta a API do Incus e lista as instâncias ativas.
+        \item Para cada instância, um evento \texttt{instance.sync} é publicado —
+              processamento desacoplado e paralelo.
+        \item Para cada instância, o serviço:
+        \begin{itemize}
+            \item extrai rede (IPv4, IPv6, MAC) do estado reportado pelo Incus;
+            \item persiste metadados cloud-init (\texttt{instance-id}, hostname,
+                  chaves SSH, \textit{placement});
+            \item armazena \texttt{user-data} e \texttt{vendor-data} das chaves
+                  \texttt{cloud-init.*} do Incus;
+            \item gera \texttt{network-config} (Networking Config v2 / Netplan) quando
+                  não definida pelo administrador.
+        \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Endpoints da API}
+    Endpoints públicos, no modelo do \textit{datasource} NoCloud
+    HTTP~\cite{cloudinit_nocloud}:
+    \begin{itemize}
+        \item \texttt{GET /configs/meta-data} — identidade da instância
+              (\texttt{instance-id}, hostname, IPs, \texttt{public-keys}).
+        \item \texttt{GET /configs/meta-data/:key} — campo específico dos metadados.
+        \item \texttt{GET /configs/user-data} — \textit{scripts}/cloud-config do usuário.
+        \item \texttt{GET /configs/vendor-data} — por instância, com \textit{fallback}
+              global.
+        \item \texttt{GET /configs/network-config} — definida pelo administrador ou
+              gerada automaticamente.
+    \end{itemize}
+    \vspace{0.3cm}
+    Endpoints internos (\texttt{/internal/*}): CRUD administrativo de vendor-data —
+    não expostos às instâncias.
+\end{frame}
+
+\begin{frame}{Descoberta do Serviço pelas Instâncias}
+    \begin{itemize}
+        \item Mesma convenção das nuvens públicas: endereço \textit{link-local}
+              \texttt{169.254.169.254} adicionado à \textit{bridge} do Incus
+              (\texttt{incusbr0}).
+        \item Regra NAT redireciona \texttt{169.254.169.254:80} para a porta do
+              serviço — nenhuma configuração dentro das instâncias.
+        \item \textit{Datasource} NoCloud em modo rede (\texttt{dsmode: net}),
+              com \texttt{seedfrom} apontando para \texttt{/configs/} no perfil do
+              Incus.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Alta Disponibilidade via RAFT}
+    Nó único = ponto único de falha. Solução: consenso distribuído
+    RAFT~\cite{ongaro2014raft} com \texttt{hashicorp/raft}~\cite{hashicorp_raft}.
+    \begin{itemize}
+        \item \textbf{Eleição de líder}: apenas o líder sincroniza com o Incus e propõe
+              escritas; falha do líder dispara nova eleição automática.
+        \item \textbf{Replicação de log + FSM}: cada escrita vira um comando tipado,
+              confirmado por maioria e aplicado ao SQLite local de cada nó.
+        \item \textbf{Persistência}: log RAFT em BoltDB — sem banco externo.
+        \item \textbf{Leituras em qualquer nó}: todos mantêm cópia local do estado,
+              distribuindo a carga de consultas.
+        \item Ativação opcional por variáveis de ambiente
+              (\texttt{RAFT\_ENABLED}, \texttt{NODE\_ID}, \texttt{PEERS}, \ldots).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Tecnologias Utilizadas}
+    \begin{itemize}
+        \item \textbf{Go} — binário estático único; goroutines para o processamento
+              paralelo de eventos.
+        \item \textbf{Gin}~\cite{gin2024} — framework HTTP de alto desempenho; separa
+              rotas públicas e internas.
+        \item \textbf{SQLite + SQLC}~\cite{sqlite2024} — banco embutido; queries SQL
+              com tipagem estática gerada.
+        \item \textbf{GoEventBus} — barramento \textit{pub/sub} que desacopla
+              agendamento e sincronização.
+        \item \textbf{gocron} — agendamento do ciclo de sincronização (10~s).
+        \item \textbf{hashicorp/raft}~\cite{hashicorp_raft} — consenso distribuído.
+        \item \textbf{OpenTelemetry + Prometheus}~\cite{opentelemetry2024,prometheus2024}
+              — métricas de sincronização e de API em \texttt{/metrics}.
+    \end{itemize}
+\end{frame}
+
+% =====================================================================
+\section{Resultados}
+\sectionframe
+
+\begin{frame}{Metodologia de Avaliação}
+    \begin{itemize}
+        \item Ambiente: GCE \texttt{e2-standard-4} (4 vCPUs, 15~GiB), Ubuntu 24.04
+              LTS, Incus 6.0.0; serviço no mesmo host das instâncias.
+        \item Cargas de 5 a 200 contêineres simultâneos com cloud-init apontando para
+              o serviço.
+        \item Latência medida com \texttt{hey}: 5000 requisições, concorrência 50;
+              percentis p50/p95/p99.
+        \item \textbf{Achado prático}: em nuvem pública, \texttt{169.254.169.254} já é
+              usado pelo provedor — o \textit{datasource} foi apontado para o
+              \textit{gateway} da \textit{bridge} (\texttt{10.10.10.1:8080}).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Avaliação Funcional}
+    \begin{table}
+        \centering
+        \begin{tabular}{lc}
+            \toprule
+            \textbf{Propriedade} & \textbf{Resultado} \\
+            \midrule
+            Isolamento de metadados & Aprovado \\
+            Isolamento sob falsificação de IP (\texttt{X-Forwarded-For}) & Aprovado \\
+            Execução de \textit{user-data} & Aprovado \\
+            Entrega de \textit{network-config} & Aprovado \\
+            Propagação de estado após reinício & Aprovado \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \vspace{0.3cm}
+    Inicialização real: cloud-init selecionou o \textit{datasource} NoCloud de rede,
+    obteve os dados (HTTP 200) e concluiu com \texttt{cloud-init status: done} —
+    compatibilidade de ponta a ponta.
+\end{frame}
+
+\begin{frame}{Desempenho: Latência da API}
+    \begin{table}
+        \centering
+        \begin{tabular}{lccc}
+            \toprule
+            \textbf{Endpoint} & \textbf{p50 (ms)} & \textbf{p95 (ms)} & \textbf{p99 (ms)} \\
+            \midrule
+            \texttt{/meta-data}       & 13{,}2 & 53{,}7 & 83{,}2 \\
+            \texttt{/user-data}       & 18{,}9 & 53{,}6 & 72{,}4 \\
+            \texttt{/network-config}  & 11{,}4 & 47{,}2 & 72{,}4 \\
+            \texttt{/vendor-data}     & 17{,}0 & 48{,}4 & 68{,}9 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \vspace{0.3cm}
+    \begin{itemize}
+        \item Medianas de 11--19~ms; p99 abaixo de 90~ms — compatível com as janelas
+              de tempo do \textit{boot}.
+        \item Latência de sincronização (criação no Incus $\rightarrow$ metadados
+              disponíveis): $\approx$~20{,}5~s ($\approx$~2 ciclos de \textit{polling}).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Desempenho: Escalabilidade}
+    \begin{table}
+        \centering
+        \small
+        \begin{tabular}{lccccc}
+            \toprule
+            \textbf{Instâncias} & \textbf{p50 (ms)} & \textbf{p95 (ms)} & \textbf{p99 (ms)} & \textbf{Erros} & \textbf{Mem. (MB)} \\
+            \midrule
+            5   & 16{,}2 & 60{,}3 & 92{,}4 & 0{,}0\% & 1152 \\
+            25  & 12{,}4 & 51{,}8 & 77{,}2 & 0{,}0\% & 1373 \\
+            50  & 12{,}9 & 52{,}0 & 80{,}8 & 0{,}0\% & 1733 \\
+            100 & 14{,}4 & 58{,}6 & 92{,}1 & 0{,}0\% & 1763 \\
+            200 & 12{,}8 & 54{,}2 & 87{,}2 & 0{,}0\% & 1711 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \vspace{0.3cm}
+    \begin{itemize}
+        \item Hipótese inicial: degradação por serialização de escrita do SQLite.
+        \item \textbf{Não corroborada} até 200 instâncias: latência estável e zero
+              erros — carga dominada por leituras; escritas a cada 10~s absorvidas
+              pelo modo WAL.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Alta Disponibilidade (\textit{cluster} de 3 nós)}
+    \begin{table}
+        \centering
+        \begin{tabular}{ll}
+            \toprule
+            \textbf{Propriedade} & \textbf{Resultado} \\
+            \midrule
+            Formação do \textit{cluster} & 1 líder + 2 seguidores \\
+            Replicação de estado & instância presente nos 3 nós \\
+            Reeleição após falha do líder & \textbf{2{,}40~s} \\
+            Disponibilidade após \textit{failover} & preservada \\
+            Reintegração de nó & reingressa como seguidor \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \vspace{0.3cm}
+    \begin{itemize}
+        \item Topologia avaliada: réplicas sobre um Incus compartilhado — reconciliação
+              correta e \textit{failover} sem perda de dados.
+        \item Um Incus por nó (borda distribuída) exigiria reconciliação por nó de
+              origem.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Discussão e Limitações}
+    \begin{itemize}
+        \item Cobre os campos essenciais dos módulos mais comuns do cloud-init
+              (\texttt{set\_hostname}, \texttt{users-groups}, \texttt{write-files},
+              \texttt{runcmd}, rede).
+        \item \textbf{Limitações}:
+        \begin{itemize}
+            \item SQLite serializa escritas — potencial gargalo bem acima da escala
+                  avaliada;
+            \item subconjunto dos campos de AWS/GCP (sem tipo de instância,
+                  faturamento);
+            \item garantias de \textit{failover} pressupõem a topologia de Incus
+                  compartilhado.
+        \end{itemize}
+        \item \textbf{Ameaças à validade}: host único nos testes de desempenho;
+              contêineres de sistema (não VMs completas); janela de inconsistência do
+              \textit{polling}.
+    \end{itemize}
+\end{frame}
+
+% =====================================================================
+\section{Conclusão}
+\sectionframe
+
+\begin{frame}{Conclusão}
+    \begin{itemize}
+        \item Serviço de metadados compatível com cloud-init para o Incus: preenche a
+              lacuna de um endpoint HTTP autônomo em infraestrutura privada.
+        \item Identificação por IP de origem: operação transparente, sem agentes nas
+              instâncias.
+        \item Validado em ambiente real: \textit{boots} completos com sucesso,
+              latências de dezenas de milissegundos, escalabilidade estável até 200
+              instâncias e reeleição de líder em $\approx$~2{,}4~s.
+        \item Código aberto, binário único, implantação simples — adequado a
+              \textit{homelabs}, borda e nuvens privadas de pequena escala.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Trabalhos Futuros}
+    \begin{enumerate}
+        \item Suporte à convenção \texttt{169.254.169.254} via \textit{namespace} de
+              rede ou \textit{proxy} reverso.
+        \item Ampliação dos módulos e campos do cloud-init suportados.
+        \item Autenticação baseada em sessões inspirada no
+              IMDSv2~\cite{aws_imdsv2} contra SSRF.
+        \item Substituição do \textit{polling} pela API de eventos do Incus
+              (sincronização em tempo real).
+        \item \textit{Benchmarks} em cenários de maior escala.
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}[plain,noframenumbering]
+    \centering
+    \vspace{2cm}
+    {\LARGE \textbf{Obrigado!}}\\[1cm]
+    {\large Perguntas?}\\[1.5cm]
+    \texttt{gustavoafs@ufba.br}
+\end{frame}
+
+\begin{frame}[plain,noframenumbering,allowframebreaks]
+    \frametitle{Referências}
+    \bibliographystyle{plain}
+    \bibliography{refs}
+\end{frame}
+
+\end{document}

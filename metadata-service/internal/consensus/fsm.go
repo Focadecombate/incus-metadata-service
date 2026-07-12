@@ -110,6 +110,16 @@ func (f *FSM) Apply(log *raft.Log) interface{} {
 		}
 		return result
 
+	case CmdDeleteInstance:
+		var id int64
+		if err := json.Unmarshal(cmd.Data, &id); err != nil {
+			return err
+		}
+		if err := f.db.DeleteInstance(ctx, id); err != nil {
+			return err
+		}
+		return nil
+
 	default:
 		return fmt.Errorf("unknown command type: %d", cmd.Type)
 	}

@@ -557,6 +557,8 @@ func (em *EventManager) applyWrite(cmdType consensus.CommandType, params any) er
 	case consensus.CmdCreateOrUpdateVendorData:
 		_, err := em.app.Database.CreateOrUpdateInstanceVendorData(ctx, params.(db.CreateOrUpdateInstanceVendorDataParams))
 		return err
+	case consensus.CmdDeleteInstance:
+		return em.app.Database.DeleteInstance(ctx, params.(int64))
 	default:
 		return fmt.Errorf("unknown command type: %d", cmdType)
 	}
@@ -670,11 +672,10 @@ func (em *EventManager) handleInstancesSync(ctx context.Context, args map[string
 // reconcileDeletedInstances soft-deletes DB instances absent from the current
 // Incus listing. It runs on the leader only (handleInstancesSync is leader-gated).
 //
-// NOTE: the soft-delete is written directly to the local DB rather than through
-// RAFT, because the consensus layer has no CmdDeleteInstance command. This is
-// correct for single-node and non-RAFT deployments; replicating reconciliation
-// deletes across a RAFT cluster would require adding a delete command to the
-// consensus package.
+// The soft-delete is routed through applyWrite so that, when RAFT is enabled,
+// the deletion is replicated to all followers via the log rather than applied
+// only to the leader's local DB (which would diverge the cluster). In non-RAFT
+// mode applyWrite executes the delete directly on the local DB.
 func (em *EventManager) reconcileDeletedInstances(ctx context.Context, instances []incus.InstanceFull, handlerLogger zerolog.Logger) {
 	live := make(map[string]struct{}, len(instances))
 	for _, instance := range instances {
@@ -691,7 +692,7 @@ func (em *EventManager) reconcileDeletedInstances(ctx context.Context, instances
 		if _, ok := live[dbInstance.Project+"/"+dbInstance.Name]; ok {
 			continue
 		}
-		if err := em.app.Database.DeleteInstance(ctx, dbInstance.ID); err != nil {
+		if err := em.applyWrite(consensus.CmdDeleteInstance, dbInstance.ID); err != nil {
 			handlerLogger.Error().Err(err).
 				Str("instance_name", dbInstance.Name).
 				Str("instance_project", dbInstance.Project).

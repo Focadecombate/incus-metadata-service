@@ -39,12 +39,13 @@ WHERE
 -- ===== INSTANCES QUERIES =====
 -- name: CreateInstance :one
 INSERT INTO
-  instances (name, project, ip_address)
+  instances (name, project, source_node, ip_address)
 VALUES
-  (?, ?, ?) ON CONFLICT(name, project) DO
+  (?, ?, ?, ?) ON CONFLICT(name, project) DO
 UPDATE
 SET
   ip_address = excluded.ip_address,
+  source_node = excluded.source_node,
   deleted_at = NULL,
   updated_at = CURRENT_TIMESTAMP RETURNING *;
 
@@ -85,6 +86,15 @@ WHERE
   deleted_at IS NULL
 ORDER BY
   created_at DESC;
+
+-- name: ListActiveInstancesBySourceNode :many
+SELECT
+  *
+FROM
+  instances
+WHERE
+  source_node = ?
+  AND deleted_at IS NULL;
 
 -- name: ListInstancesByProject :many
 SELECT

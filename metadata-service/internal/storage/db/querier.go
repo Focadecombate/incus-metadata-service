@@ -54,6 +54,7 @@ type Querier interface {
 	GetProfile(ctx context.Context, arg GetProfileParams) (Profile, error)
 	GetVendorData(ctx context.Context, name string) (GetVendorDataRow, error)
 	HardDeleteInstance(ctx context.Context, id int64) error
+	ListActiveInstancesBySourceNode(ctx context.Context, sourceNode string) ([]Instance, error)
 	ListInstances(ctx context.Context) ([]Instance, error)
 	ListInstancesByProject(ctx context.Context, project string) ([]Instance, error)
 	ListProfiles(ctx context.Context) ([]Profile, error)

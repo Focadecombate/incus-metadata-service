@@ -314,9 +314,10 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 	if err != nil {
 		handlerLogger.Info().Err(err).Msg("Instance not found in database, creating new instance")
 		createParams := db.CreateInstanceParams{
-			Name:      instance.Name,
-			Project:   instance.Project,
-			IpAddress: strPtrOrNil(primaryIPv4),
+			Name:       instance.Name,
+			Project:    instance.Project,
+			SourceNode: em.nodeID(),
+			IpAddress:  strPtrOrNil(primaryIPv4),
 		}
 		if err := em.applyWrite(consensus.CmdCreateInstance, createParams); err != nil {
 			handlerLogger.Error().Err(err).Msg("Failed to create instance in database")
@@ -669,8 +670,22 @@ func (em *EventManager) handleInstancesSync(ctx context.Context, args map[string
 	}, nil
 }
 
+// nodeID returns the id of this node for stamping instance ownership.
+// It is the RAFT node id when consensus is enabled, otherwise "standalone".
+func (em *EventManager) nodeID() string {
+	if em.app.Config.Raft != nil && em.app.Config.Raft.Enabled {
+		return em.app.Config.Raft.NodeID
+	}
+	return "standalone"
+}
+
 // reconcileDeletedInstances soft-deletes DB instances absent from the current
 // Incus listing. It runs on the leader only (handleInstancesSync is leader-gated).
+//
+// NOTE: reconciliation is intentionally GLOBAL (all DB instances), which is
+// correct for the current shared-Incus HA model. A future per-node "Option B"
+// reconcile would instead scope to instances stamped with this node's id via
+// db.ListActiveInstancesBySourceNode(ctx, em.nodeID()).
 //
 // The soft-delete is routed through applyWrite so that, when RAFT is enabled,
 // the deletion is replicated to all followers via the log rather than applied

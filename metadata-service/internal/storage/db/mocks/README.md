@@ -54,6 +54,7 @@ The MockQuerier implements all methods from the `db.Querier` interface:
 - `GetInstanceByIP`
 - `ListInstances`
 - `ListInstancesByProject`
+- `ListActiveInstancesBySourceNode`
 - `UpdateInstance`
 - `UpdateInstanceIP`
 - `DeleteInstance`

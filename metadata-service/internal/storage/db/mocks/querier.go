@@ -64,6 +64,11 @@ func (m *MockQuerier) ListInstancesByProject(ctx context.Context, project string
 	return args.Get(0).([]db.Instance), args.Error(1)
 }
 
+func (m *MockQuerier) ListActiveInstancesBySourceNode(ctx context.Context, sourceNode string) ([]db.Instance, error) {
+	args := m.Called(ctx, sourceNode)
+	return args.Get(0).([]db.Instance), args.Error(1)
+}
+
 func (m *MockQuerier) UpdateInstance(ctx context.Context, arg db.UpdateInstanceParams) (db.Instance, error) {
 	args := m.Called(ctx, arg)
 	return args.Get(0).(db.Instance), args.Error(1)

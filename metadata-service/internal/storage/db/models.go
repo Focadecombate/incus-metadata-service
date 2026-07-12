@@ -9,13 +9,14 @@ import (
 )
 
 type Instance struct {
-	ID        int64
-	Name      string
-	Project   string
-	IpAddress *string
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
-	DeletedAt *time.Time
+	ID         int64
+	Name       string
+	Project    string
+	SourceNode string
+	IpAddress  *string
+	CreatedAt  *time.Time
+	UpdatedAt  *time.Time
+	DeletedAt  *time.Time
 }
 
 type InstanceLog struct {

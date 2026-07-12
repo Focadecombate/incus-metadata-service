@@ -135,6 +135,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.hardDeleteInstanceStmt, err = db.PrepareContext(ctx, hardDeleteInstance); err != nil {
 		return nil, fmt.Errorf("error preparing query HardDeleteInstance: %w", err)
 	}
+	if q.listActiveInstancesBySourceNodeStmt, err = db.PrepareContext(ctx, listActiveInstancesBySourceNode); err != nil {
+		return nil, fmt.Errorf("error preparing query ListActiveInstancesBySourceNode: %w", err)
+	}
 	if q.listInstancesStmt, err = db.PrepareContext(ctx, listInstances); err != nil {
 		return nil, fmt.Errorf("error preparing query ListInstances: %w", err)
 	}
@@ -349,6 +352,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing hardDeleteInstanceStmt: %w", cerr)
 		}
 	}
+	if q.listActiveInstancesBySourceNodeStmt != nil {
+		if cerr := q.listActiveInstancesBySourceNodeStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listActiveInstancesBySourceNodeStmt: %w", cerr)
+		}
+	}
 	if q.listInstancesStmt != nil {
 		if cerr := q.listInstancesStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listInstancesStmt: %w", cerr)
@@ -465,6 +473,7 @@ type Queries struct {
 	getProfileStmt                          *sql.Stmt
 	getVendorDataStmt                       *sql.Stmt
 	hardDeleteInstanceStmt                  *sql.Stmt
+	listActiveInstancesBySourceNodeStmt     *sql.Stmt
 	listInstancesStmt                       *sql.Stmt
 	listInstancesByProjectStmt              *sql.Stmt
 	listProfilesStmt                        *sql.Stmt
@@ -516,6 +525,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getProfileStmt:                          q.getProfileStmt,
 		getVendorDataStmt:                       q.getVendorDataStmt,
 		hardDeleteInstanceStmt:                  q.hardDeleteInstanceStmt,
+		listActiveInstancesBySourceNodeStmt:     q.listActiveInstancesBySourceNodeStmt,
 		listInstancesStmt:                       q.listInstancesStmt,
 		listInstancesByProjectStmt:              q.listInstancesByProjectStmt,
 		listProfilesStmt:                        q.listProfilesStmt,

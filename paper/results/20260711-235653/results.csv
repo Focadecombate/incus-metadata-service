@@ -1,0 +1,5 @@
+section,name,verdict,detail
+S,S-n5,MEASURED,"p50=16.20ms p95=60.30ms p99=92.40ms err=0.00%"
+S,S-n10,MEASURED,"p50=13.10ms p95=52.70ms p99=78.20ms err=0.00%"
+S,S-n25,MEASURED,"p50=12.40ms p95=51.80ms p99=77.20ms err=0.00%"
+S,S-n50,MEASURED,"p50=14.80ms p95=62.70ms p99=98.50ms err=0.00%"

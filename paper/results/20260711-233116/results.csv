@@ -1,0 +1,6 @@
+section,name,verdict,detail
+F,F1-isolation,PASS,"each instance sees its own hostname"
+F,F1b-spoof,PASS,"SetTrustedProxies(nil) holds"
+F,F2-userdata-exec,PASS,"runcmd sentinel created"
+F,F3-network-config,CAPTURED,"served config + ip addr saved for manual compare"
+F,F4-propagation,PASS,"metadata served within sync window after restart"

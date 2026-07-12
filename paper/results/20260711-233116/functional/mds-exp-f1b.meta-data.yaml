@@ -1,0 +1,17 @@
+instance-id: "6"
+hostname: mds-exp-f1b
+local-hostname: mds-exp-f1b
+local-ipv4: 10.10.10.224
+local-ipv6: fd42:7ccc:2b2a:4c1d:216:3eff:fe9f:4e98
+placement:
+    host-id: none
+    project: default
+network:
+    interfaces:
+        macs:
+            00:16:3e:9f:4e:98:
+                device-number: eth0
+                local-hostname: mds-exp-f1b
+                local-ipv4: 10.10.10.224
+                local-ipv6: fd42:7ccc:2b2a:4c1d:216:3eff:fe9f:4e98
+                mac: 00:16:3e:9f:4e:98

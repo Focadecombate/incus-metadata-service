@@ -1,0 +1,8 @@
+ethernets:
+    eth0:
+        addresses:
+            - 10.10.10.39/24
+            - fd42:7ccc:2b2a:4c1d:216:3eff:fe19:a2bb
+        match:
+            macaddress: 00:16:3e:19:a2:bb
+version: 2

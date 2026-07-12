@@ -10,7 +10,7 @@ De modo geral, os experimentos confirmam a compatibilidade funcional do serviço
 
 Os experimentos foram conduzidos em uma instância de nuvem Google Compute Engine do tipo \texttt{e2-standard-4}, com 4 vCPUs (processador Intel Xeon a 2{,}20~GHz), 15~GiB de memória RAM, executando Ubuntu 24.04 LTS (\textit{kernel} 6.17.0-1020-gcp) e Incus 6.0.0. O serviço de metadados foi implantado no mesmo host das instâncias.
 
-Um aspecto prático relevante emergiu durante a configuração do ambiente: em provedores de nuvem pública (Google Cloud, AWS e Azure), o endereço \texttt{169.254.169.254} já é utilizado pelo próprio serviço de metadados do provedor, de modo que sua reutilização no host interfere na resolução de nomes e no acesso aos metadados da própria máquina virtual. Por essa razão, no ambiente de testes o \textit{cloud-init} foi apontado, via \textit{datasource} NoCloud, para o endereço de \textit{gateway} da \textit{bridge} do Incus (\texttt{10.10.10.1:8080}), diretamente alcançável pelas instâncias. Esse achado constitui, por si só, uma observação de relevância prática: a convenção do endereço reservado, embora adequada para instâncias hospedadas dentro de um provedor, não é diretamente transponível para um host que já opera sob tal provedor.
+Um aspecto prático relevante emergiu durante a configuração do ambiente: em provedores de nuvem pública (Google Cloud, AWS e Azure), o endereço \texttt{169.254.169.254} já é utilizado pelo próprio serviço de metadados do provedor, de modo que sua reutilização no host interfere na resolução de nomes e no acesso aos metadados da própria máquina virtual. Por essa razão, no ambiente de testes o \textit{cloud-init} foi apontado, via \textit{datasource} NoCloud, para o endereço de \textit{gateway} da \textit{bridge} do Incus (\texttt{10.10.10.1:8080}), diretamente alcançável pelas instâncias. Esse achado tem relevância prática por si só: a convenção do endereço reservado, embora adequada para instâncias hospedadas dentro de um provedor, não é diretamente transponível para um host que já opera sob tal provedor.
 
 Para avaliar o comportamento sob diferentes cargas, foram criados grupos de instâncias com cardinalidades crescentes, de 5 até 200 contêineres simultâneos. Cada instância foi configurada com o \textit{cloud-init} habilitado, apontando para o serviço de metadados proposto como fonte de configuração. Durante a inicialização, o \textit{cloud-init} realizou requisições aos \textit{endpoints} do serviço (\texttt{/meta-data}, \texttt{/user-data}, \texttt{/vendor-data} e \texttt{/network-config}), seguindo o fluxo de \textit{datasource} documentado em \cite{cloudinit2024}.
 
@@ -61,7 +61,7 @@ A avaliação de desempenho concentrou-se em três métricas: latência de respo
 
 \subsubsection{Latência de Resposta da API}
 
-A latência foi medida para os quatro \textit{endpoints} do serviço. A Tabela~\ref{tab:latencia} apresenta os percentis p50, p95 e p99 obtidos com 5000 requisições por \textit{endpoint}. O \textit{endpoint} \texttt{/vendor-data} respondeu com código HTTP 404 por não haver dado de \textit{vendor} configurado no cenário --- comportamento correto, tolerado pelo \textit{cloud-init} ---, mas suas latências permanecem representativas do custo de processamento da requisição.
+A latência foi medida para os quatro \textit{endpoints} do serviço. A Tabela~\ref{tab:latencia} apresenta os percentis p50, p95 e p99 obtidos com 5000 requisições por \textit{endpoint}. O \textit{endpoint} \texttt{/vendor-data} respondeu com código HTTP 404 por não haver dado de \textit{vendor} configurado no cenário (comportamento correto, tolerado pelo \textit{cloud-init}), mas suas latências permanecem representativas do custo de processamento da requisição.
 
 \begin{table}[ht]
 \centering
@@ -83,7 +83,7 @@ As latências medianas situam-se em torno de 11--19~ms e o percentil p99 abaixo 
 
 \subsubsection{Latência de Sincronização}
 
-A latência de sincronização --- intervalo entre a criação de uma instância no Incus e a disponibilização de seu registro de metadados --- foi medida em aproximadamente \textbf{20{,}5~s}. Esse valor é consistente com a janela do ciclo de sincronização periódica adotado (\textit{polling} a cada 10~s) somada ao tempo de inicialização de rede da instância, correspondendo tipicamente a cerca de dois ciclos de sincronização.
+A latência de sincronização (intervalo entre a criação de uma instância no Incus e a disponibilização de seu registro de metadados) foi medida em aproximadamente \textbf{20{,}5~s}. Esse valor é consistente com a janela do ciclo de sincronização periódica adotado (\textit{polling} a cada 10~s) somada ao tempo de inicialização de rede da instância, correspondendo tipicamente a cerca de dois ciclos de sincronização.
 
 \subsubsection{Escalabilidade}
 
@@ -108,7 +108,7 @@ Para avaliar o comportamento com o aumento do número de instâncias simultânea
 \end{tabular}
 \end{table}
 
-Os dados \textbf{não corroboram} a hipótese de degradação por serialização de escrita nessa faixa de escala: a latência permaneceu estável (p50 entre 12 e 16~ms; p99 entre 77 e 98~ms) e a taxa de erro foi nula em todas as configurações, até 200 instâncias sobre 4 vCPUs. Esse resultado decorre da natureza do fluxo predominante --- requisições de leitura (\texttt{GET}) de metadados ---, enquanto as escritas de sincronização ocorrem apenas a cada 10~s e são absorvidas pelo modo WAL (\textit{Write-Ahead Logging}) e pelo \textit{timeout} de ocupação configurados no SQLite. Conclui-se que a serialização de escrita não constitui gargalo no perfil de carga avaliado; uma eventual degradação exigiria contagens de instâncias ou taxas de escrita substancialmente superiores, o que se registra como limite medido e não como tendência de degradação linear.
+Os dados \textbf{não corroboram} a hipótese de degradação por serialização de escrita nessa faixa de escala: a latência permaneceu estável (p50 entre 12 e 16~ms; p99 entre 77 e 98~ms) e a taxa de erro foi nula em todas as configurações, até 200 instâncias sobre 4 vCPUs. Esse resultado decorre da natureza do fluxo predominante, majoritariamente requisições de leitura (\texttt{GET}) de metadados, enquanto as escritas de sincronização ocorrem apenas a cada 10~s e são absorvidas pelo modo WAL (\textit{Write-Ahead Logging}) e pelo \textit{timeout} de ocupação configurados no SQLite. Conclui-se que a serialização de escrita não é um gargalo no perfil de carga avaliado; uma eventual degradação exigiria contagens de instâncias ou taxas de escrita substancialmente superiores, o que se registra como limite medido e não como tendência de degradação linear.
 
 \subsection{Avaliação de Alta Disponibilidade}
 \label{subsec_avaliacao_ha}
@@ -132,7 +132,7 @@ Reintegração de nó & nó reiniciado reingressa como seguidor \\
 \end{tabular}
 \end{table}
 
-O \textit{cluster} formou-se corretamente, com eleição de um único líder. Uma instância criada no Incus compartilhado teve seu registro replicado aos três nós. Ao encerrar-se abruptamente o serviço do líder (mantendo-se o Incus compartilhado ativo), um novo líder foi eleito em \textbf{2{,}40~s} --- valor coerente com os \textit{timeouts} configurados (\textit{heartbeat} de 1~s e eleição de 1~s) ---, e os dados replicados permaneceram disponíveis nos nós sobreviventes, sem remoção indevida. Um nó previamente encerrado foi capaz de reingressar ao \textit{cluster} e recuperar o estado a partir do \textit{log}.
+O \textit{cluster} formou-se corretamente, com eleição de um único líder. Uma instância criada no Incus compartilhado teve seu registro replicado aos três nós. Ao encerrar-se abruptamente o serviço do líder (mantendo-se o Incus compartilhado ativo), um novo líder foi eleito em \textbf{2{,}40~s}, valor coerente com os \textit{timeouts} configurados (\textit{heartbeat} de 1~s e eleição de 1~s), e os dados replicados permaneceram disponíveis nos nós sobreviventes, sem remoção indevida. Um nó previamente encerrado foi capaz de reingressar ao \textit{cluster} e recuperar o estado a partir do \textit{log}.
 
 Observou-se que a corretude da rotina de reconciliação (que remove registros de instâncias ausentes do Incus) depende da topologia adotada: sob a topologia de Incus compartilhado, todo nó que possa assumir a liderança observa o mesmo conjunto de instâncias, de modo que a reconciliação é correta e o \textit{failover} não provoca perda de dados. Uma topologia alternativa, com um Incus por nó (adequada a cenários de borda distribuída), exigiria reconciliação restrita às instâncias de cada nó de origem, de forma que um nó jamais removesse instâncias pertencentes a outro.
 
@@ -162,12 +162,12 @@ Tipo de instância           & \ding{55} & \ding{51} & \ding{51} & \ding{51} \\
 \end{tabular}
 \end{table}
 
-O serviço proposto cobre os campos essenciais para a operação dos módulos mais comuns do \textit{cloud-init} --- \texttt{set\_hostname}, \texttt{users-groups}, \texttt{write-files}, \texttt{runcmd} e configuração de rede ---, oferecendo também entrega de \textit{vendor-data} por instância com \textit{fallback} global. Campos específicos de provedores públicos, como tipo de instância e atributos de faturamento, não são expostos, por não se aplicarem ao contexto de \textit{homelab} e computação de borda visado.
+O serviço proposto cobre os campos essenciais para a operação dos módulos mais comuns do \textit{cloud-init} (\texttt{set\_hostname}, \texttt{users-groups}, \texttt{write-files}, \texttt{runcmd} e configuração de rede), oferecendo também entrega de \textit{vendor-data} por instância com \textit{fallback} global. Campos específicos de provedores públicos, como tipo de instância e atributos de faturamento, não são expostos, por não se aplicarem ao contexto de \textit{homelab} e computação de borda visado.
 
 \subsection{Discussão}
 \label{subsec_discussao}
 
-Os resultados obtidos permitem avaliar em que medida o serviço de metadados proposto atende aos requisitos de um ambiente Incus de pequena escala. Do ponto de vista funcional, o serviço demonstrou corretude no isolamento de metadados --- inclusive sob tentativa de falsificação de origem --- e na entrega de configurações efetivamente aplicadas pelo \textit{cloud-init}, validando a premissa de compatibilidade com o \textit{datasource} de rede \cite{cloudinit2024}. Do ponto de vista de desempenho, a natureza leve da implementação traduziu-se em latências de dezenas de milissegundos e em escalabilidade estável até 200 instâncias. Do ponto de vista de disponibilidade, o mecanismo de consenso demonstrou eleição e recuperação de líder da ordem de segundos.
+Os resultados obtidos permitem avaliar em que medida o serviço de metadados proposto atende aos requisitos de um ambiente Incus de pequena escala. Do ponto de vista funcional, o serviço demonstrou corretude no isolamento de metadados (inclusive sob tentativa de falsificação de origem) e na entrega de configurações efetivamente aplicadas pelo \textit{cloud-init}, validando a premissa de compatibilidade com o \textit{datasource} de rede \cite{cloudinit2024}. Do ponto de vista de desempenho, a natureza leve da implementação traduziu-se em latências de dezenas de milissegundos e em escalabilidade estável até 200 instâncias. Do ponto de vista de disponibilidade, o mecanismo de consenso demonstrou eleição e recuperação de líder da ordem de segundos.
 
 Entre as limitações do serviço proposto, destacam-se:
 

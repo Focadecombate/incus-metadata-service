@@ -215,11 +215,18 @@ func (em *EventManager) handleInstanceCreated(ctx context.Context, args map[stri
 		Str("instance", instanceName).
 		Msg("Processing instance created event")
 
-	// TODO: Add actual instance creation logic here
-	
-	return GoEventBus.Result{
-		Message: "Instance created successfully",
-	}, nil
+	// Fetch the full instance from Incus and delegate to the same per-instance
+	// sync path, closing the boot-race window where a freshly-created instance
+	// requests metadata before the periodic full sync has run.
+	full, _, err := em.app.Incus.GetInstanceFull(instanceName)
+	if err != nil {
+		handlerLogger.Error().Err(err).Msg("Failed to fetch created instance from Incus")
+		return GoEventBus.Result{
+			Message: "Failed to fetch created instance",
+		}, fmt.Errorf("failed to fetch created instance %q: %w", instanceName, err)
+	}
+
+	return em.handleInstanceSync(ctx, map[string]any{"instance": *full})
 }
 
 // extractNetworkAddresses extracts IPv4 and IPv6 addresses, MAC addresses, and interface
@@ -307,9 +314,10 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 	if err != nil {
 		handlerLogger.Info().Err(err).Msg("Instance not found in database, creating new instance")
 		createParams := db.CreateInstanceParams{
-			Name:      instance.Name,
-			Project:   instance.Project,
-			IpAddress: strPtrOrNil(primaryIPv4),
+			Name:       instance.Name,
+			Project:    instance.Project,
+			SourceNode: em.nodeID(),
+			IpAddress:  strPtrOrNil(primaryIPv4),
 		}
 		if err := em.applyWrite(consensus.CmdCreateInstance, createParams); err != nil {
 			handlerLogger.Error().Err(err).Msg("Failed to create instance in database")
@@ -463,12 +471,13 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 				addresses = append(addresses, iface.IPv6)
 			}
 
-			ethernets[iface.Name] = types.Ethernet{
-				Match: types.Match{
-					MacAddress: iface.Hwaddr,
-				},
+			eth := types.Ethernet{
 				Addresses: addresses,
 			}
+			if iface.Hwaddr != "" {
+				eth.Match = &types.Match{MacAddress: iface.Hwaddr}
+			}
+			ethernets[iface.Name] = eth
 		}
 
 		networkConfig := types.NetworkConfig{
@@ -549,6 +558,8 @@ func (em *EventManager) applyWrite(cmdType consensus.CommandType, params any) er
 	case consensus.CmdCreateOrUpdateVendorData:
 		_, err := em.app.Database.CreateOrUpdateInstanceVendorData(ctx, params.(db.CreateOrUpdateInstanceVendorDataParams))
 		return err
+	case consensus.CmdDeleteInstance:
+		return em.app.Database.DeleteInstance(ctx, params.(int64))
 	default:
 		return fmt.Errorf("unknown command type: %d", cmdType)
 	}
@@ -650,7 +661,62 @@ func (em *EventManager) handleInstancesSync(ctx context.Context, args map[string
 		Int("events_published", len(instances)).
 		Msg("Successfully published all instance sync events")
 
+	// Reconcile: soft-delete DB instances that no longer exist in Incus so a
+	// reused IP is never served a decommissioned instance's secrets.
+	em.reconcileDeletedInstances(ctx, instances, handlerLogger)
+
 	return GoEventBus.Result{
 		Message: fmt.Sprintf("Successfully triggered sync for %d instances", len(instances)),
 	}, nil
+}
+
+// nodeID returns the id of this node for stamping instance ownership.
+// It is the RAFT node id when consensus is enabled, otherwise "standalone".
+func (em *EventManager) nodeID() string {
+	if em.app.Config.Raft != nil && em.app.Config.Raft.Enabled {
+		return em.app.Config.Raft.NodeID
+	}
+	return "standalone"
+}
+
+// reconcileDeletedInstances soft-deletes DB instances absent from the current
+// Incus listing. It runs on the leader only (handleInstancesSync is leader-gated).
+//
+// NOTE: reconciliation is intentionally GLOBAL (all DB instances), which is
+// correct for the current shared-Incus HA model. A future per-node "Option B"
+// reconcile would instead scope to instances stamped with this node's id via
+// db.ListActiveInstancesBySourceNode(ctx, em.nodeID()).
+//
+// The soft-delete is routed through applyWrite so that, when RAFT is enabled,
+// the deletion is replicated to all followers via the log rather than applied
+// only to the leader's local DB (which would diverge the cluster). In non-RAFT
+// mode applyWrite executes the delete directly on the local DB.
+func (em *EventManager) reconcileDeletedInstances(ctx context.Context, instances []incus.InstanceFull, handlerLogger zerolog.Logger) {
+	live := make(map[string]struct{}, len(instances))
+	for _, instance := range instances {
+		live[instance.Project+"/"+instance.Name] = struct{}{}
+	}
+
+	dbInstances, err := em.app.Database.ListInstances(ctx)
+	if err != nil {
+		handlerLogger.Error().Err(err).Msg("Failed to list DB instances for reconciliation")
+		return
+	}
+
+	for _, dbInstance := range dbInstances {
+		if _, ok := live[dbInstance.Project+"/"+dbInstance.Name]; ok {
+			continue
+		}
+		if err := em.applyWrite(consensus.CmdDeleteInstance, dbInstance.ID); err != nil {
+			handlerLogger.Error().Err(err).
+				Str("instance_name", dbInstance.Name).
+				Str("instance_project", dbInstance.Project).
+				Msg("Failed to soft-delete stale instance")
+			continue
+		}
+		handlerLogger.Info().
+			Str("instance_name", dbInstance.Name).
+			Str("instance_project", dbInstance.Project).
+			Msg("Soft-deleted stale instance no longer present in Incus")
+	}
 }

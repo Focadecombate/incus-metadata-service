@@ -38,11 +38,25 @@ func SetupRouter(app *App) *gin.Engine {
 		})
 	}
 
-	// Register config API routes
+	// Register config API routes (public surface only). Internal mutation routes
+	// are mounted on a separate host-only listener via SetupInternalRouter.
 	configs.RegisterConfigRoutes(app.Router, app.Config, app.Database)
 
-	// Register internal API routes
-	internal_routes.RegisterInternalRoutes(app.Router, app.Config, app.Database)
-
 	return app.Router
+}
+
+// SetupInternalRouter builds a standalone Gin engine that serves only the
+// internal mutation routes. It is intended to run on a host-only listener so
+// guests cannot reach it. Trusted proxies are disabled so ClientIP relies on
+// the direct socket peer address.
+func SetupInternalRouter(app *App) (*gin.Engine, error) {
+	router := gin.New()
+	router.Use(gin.Recovery())
+	if err := router.SetTrustedProxies(nil); err != nil {
+		return nil, err
+	}
+
+	internal_routes.RegisterInternalRoutes(router, app.Config, app.Database)
+
+	return router, nil
 }

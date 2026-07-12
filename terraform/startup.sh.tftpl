@@ -1,0 +1,132 @@
+#!/bin/bash
+# Zero-to-ready provisioning for the Incus cloud-init metadata service.
+# Runs once on first boot. Watch progress with:
+#   gcloud compute ssh incus-mds-test --tunnel-through-iap -- tail -f /var/log/mds-provision.log
+# Completion marker: /var/lib/mds/PROVISION_DONE
+set -uxo pipefail
+export HOME=/root                       # startup-script context has no HOME; Go needs it
+exec > >(tee -a /var/log/mds-provision.log) 2>&1
+echo "=== MDS provision start $(date -u) ==="
+
+REPO_URL="${repo_url}"
+REPO_REF="${repo_ref}"
+SERVICE_PORT="${service_port}"
+SEED_ALIAS="${seed_image_alias}"
+BRIDGE_CIDR="${bridge_cidr}"
+BRIDGE_IP="$${BRIDGE_CIDR%%/*}"          # gateway IP guests use to reach the service
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+# Incus ships in Ubuntu 24.04 universe (6.0 LTS) — use it directly. The Zabbly
+# repo package hits a dependency conflict ("held broken packages") on noble.
+apt-get install -y -qq curl jq git build-essential golang-go openssl incus
+incus admin init --minimal
+
+# --- Build the service ------------------------------------------------------
+install -d /opt
+if [ ! -d /opt/mds/.git ]; then
+  git clone "$REPO_URL" /opt/mds
+fi
+git config --global --add safe.directory /opt/mds
+cd /opt/mds
+git fetch --all --quiet || true
+git checkout "$REPO_REF" || true
+git reset --hard "origin/$REPO_REF" --quiet || git pull --quiet || true
+# go.mod is at the repo root; the server entrypoint is under metadata-service/.
+go build -o /usr/local/bin/metadata-service ./metadata-service/cmd/server
+echo "built metadata-service from $(git rev-parse --short HEAD)"
+
+# --- Deterministic bridge subnet -------------------------------------------
+# Guests reach the service at the bridge gateway IP (always on-link, reachable).
+# NOTE: on GCP/AWS/Azure the link-local 169.254.169.254 is the CLOUD PROVIDER's
+# own metadata server — binding or routing it on the host breaks the VM's DNS.
+# So we use a bridge-local gateway address instead of the IMDS convention.
+incus network set incusbr0 ipv4.address "$BRIDGE_CIDR"
+incus network set incusbr0 ipv4.nat true
+
+# --- Incus HTTPS API + TLS trust for the service ----------------------------
+incus config set core.https_address 127.0.0.1:8443
+install -d /opt/mds-certs
+if [ ! -f /opt/mds-certs/client.crt ]; then
+  openssl req -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes \
+    -keyout /opt/mds-certs/client.key -out /opt/mds-certs/client.crt \
+    -subj "/CN=metadata-service"
+fi
+incus config trust add-certificate /opt/mds-certs/client.crt || true
+cp /var/lib/incus/server.crt /opt/mds-certs/server.crt
+chmod 600 /opt/mds-certs/client.key
+
+# --- systemd unit for the service -------------------------------------------
+install -d /var/lib/mds
+cat > /etc/systemd/system/metadata-service.service <<EOF
+[Unit]
+Description=Incus cloud-init metadata service
+After=incus.service
+Wants=incus.service
+
+[Service]
+Environment=INCUS_CONFIG_SERVER_URL=https://127.0.0.1:8443
+Environment=INCUS_CONFIG_TLS_CLIENT_CERT=/opt/mds-certs/client.crt
+Environment=INCUS_CONFIG_TLS_CLIENT_KEY=/opt/mds-certs/client.key
+Environment=INCUS_CONFIG_TLS_SERVER_CERT=/opt/mds-certs/server.crt
+Environment=DATABASE_CONFIG_DB_SOURCE=/var/lib/mds/metadata.db
+Environment=PORT=$SERVICE_PORT
+Environment=INTERNAL_ADDR=127.0.0.1:8081
+WorkingDirectory=/var/lib/mds
+ExecStart=/usr/local/bin/metadata-service
+Restart=on-failure
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl enable --now metadata-service
+
+# Wait for the service to answer its health check.
+for i in $(seq 1 30); do
+  if curl -fsS "http://127.0.0.1:$SERVICE_PORT/health" >/dev/null 2>&1; then
+    echo "service healthy"; break
+  fi
+  sleep 2
+done
+
+# --- Build the reusable seed image ------------------------------------------
+# The image (a) brings eth0 up via a static DHCP netplan INDEPENDENT of cloud-init
+# (otherwise, with NoCloud-only and an unreachable seed, the container never gets
+# a network to reach the seed — a bootstrap deadlock), (b) disables cloud-init's
+# own network management, and (c) points NoCloud at the bridge gateway.
+if ! incus image info "$SEED_ALIAS" >/dev/null 2>&1; then
+  incus launch images:ubuntu/24.04/cloud mds-seed
+  incus exec mds-seed -- cloud-init status --wait >/dev/null 2>&1 || true
+  incus exec mds-seed -- apt-get update -qq || true
+  incus exec mds-seed -- apt-get install -y -qq curl || true
+  incus exec mds-seed -- mkdir -p /etc/cloud/cloud.cfg.d
+  incus exec mds-seed -- tee /etc/netplan/10-dhcp.yaml >/dev/null <<'NP'
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: true
+NP
+  incus exec mds-seed -- chmod 600 /etc/netplan/10-dhcp.yaml
+  incus exec mds-seed -- tee /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg >/dev/null <<'DN'
+network: {config: disabled}
+DN
+  incus exec mds-seed -- tee /etc/cloud/cloud.cfg.d/90-nocloud-net.cfg >/dev/null <<CFG
+datasource_list: [ NoCloud ]
+datasource:
+  NoCloud:
+    seedfrom: http://$BRIDGE_IP:$SERVICE_PORT/configs/
+CFG
+  incus exec mds-seed -- cloud-init clean --logs
+  incus stop mds-seed
+  incus publish mds-seed --alias "$SEED_ALIAS"
+  incus delete mds-seed
+  echo "published seed image: $SEED_ALIAS"
+fi
+
+date -u > /var/lib/mds/PROVISION_DONE
+echo "=== MDS provision complete $(date -u) ==="
+echo "Smoke test: incus launch $SEED_ALIAS t1 && incus exec t1 -- cloud-init status --wait --long"

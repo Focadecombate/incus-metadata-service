@@ -52,32 +52,33 @@ package types
 //       dhcp4: yes
 
 type Match struct {
-	MacAddress string `json:"macaddress" yaml:"macaddress"`
-	Driver     string `json:"driver" yaml:"driver"`
-	Name       string `json:"name" yaml:"name"`
+	MacAddress string `json:"macaddress,omitempty" yaml:"macaddress,omitempty"`
+	Driver     string `json:"driver,omitempty" yaml:"driver,omitempty"`
+	Name       string `json:"name,omitempty" yaml:"name,omitempty"`
 }
 type Nameservers struct {
-	Search    []string `json:"search" yaml:"search"`
-	Addresses []string `json:"addresses" yaml:"addresses"`
+	Search    []string `json:"search,omitempty" yaml:"search,omitempty"`
+	Addresses []string `json:"addresses,omitempty" yaml:"addresses,omitempty"`
 }
 type Route struct {
-	To     string `json:"to" yaml:"to"`
-	Via    string `json:"via" yaml:"via"`
-	Metric int    `json:"metric" yaml:"metric"`
+	To     string `json:"to,omitempty" yaml:"to,omitempty"`
+	Via    string `json:"via,omitempty" yaml:"via,omitempty"`
+	Metric int    `json:"metric,omitempty" yaml:"metric,omitempty"`
 }
 
 type Ethernet struct {
-	Version     int         `json:"version" yaml:"version"`
-	Match       Match       `json:"match" yaml:"match"`
-	WakeOnLan   bool        `json:"wakeonlan" yaml:"wakeonlan"`
-	DHCP4       bool        `json:"dhcp4" yaml:"dhcp4"`
-	Addresses   []string    `json:"addresses" yaml:"addresses"`
-	Gateway4    string      `json:"gateway4" yaml:"gateway4"`
-	Gateway6    string      `json:"gateway6" yaml:"gateway6"`
-	Nameservers Nameservers `json:"nameservers" yaml:"nameservers"`
-	Routes      []Route     `json:"routes" yaml:"routes"`
+	Match       *Match       `json:"match,omitempty" yaml:"match,omitempty"`
+	WakeOnLan   bool         `json:"wakeonlan,omitempty" yaml:"wakeonlan,omitempty"`
+	DHCP4       bool         `json:"dhcp4,omitempty" yaml:"dhcp4,omitempty"`
+	Addresses   []string     `json:"addresses,omitempty" yaml:"addresses,omitempty"`
+	Gateway4    string       `json:"gateway4,omitempty" yaml:"gateway4,omitempty"`
+	Gateway6    string       `json:"gateway6,omitempty" yaml:"gateway6,omitempty"`
+	Nameservers *Nameservers `json:"nameservers,omitempty" yaml:"nameservers,omitempty"`
+	Routes      []Route      `json:"routes,omitempty" yaml:"routes,omitempty"`
 }
 
+// NetworkConfig is netplan / cloud-init Networking-Config v2. Version is the
+// document-root key and is always emitted as an int (2).
 type NetworkConfig struct {
 	Version   int                 `json:"version" yaml:"version"`
 	Ethernets map[string]Ethernet `json:"ethernets" yaml:"ethernets"`

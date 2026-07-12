@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/focadecombate/incus-metadata-service/metadata-service/internal/logs"
@@ -22,9 +23,11 @@ type RaftConfig struct {
 	BindAddr string `env:"BIND_ADDR,default=localhost:7000"`
 	// DataDir is the directory where RAFT stores its log and snapshots.
 	DataDir string `env:"DATA_DIR,default=raft-data"`
-	// Peers is a comma-separated list of peer addresses (e.g. "localhost:7001,localhost:7002").
+	// Peers is a comma-separated list of peer entries in "id=host:port" form
+	// (e.g. "node2=10.0.0.2:7000,node3=10.0.0.3:7000"). Each entry's id must be
+	// the peer's RAFT_NODE_ID so the bootstrap configuration matches real nodes.
 	// Leave empty for single-node mode.
-	Peers []string `env:"PEERS,delimiter=,"`
+	Peers []string `env:"PEERS"`
 	// Bootstrap indicates whether this node should bootstrap a new cluster.
 	Bootstrap bool `env:"BOOTSTRAP,default=false"`
 }
@@ -101,11 +104,16 @@ func NewRaftNode(cfg *RaftConfig, database *db.Queries) (*RaftNode, error) {
 			},
 		}
 
-		// Add peers as voters
-		for i, peer := range cfg.Peers {
+		// Add peers as voters. Each entry carries the peer's real node id so the
+		// bootstrap configuration matches the peers' actual LocalIDs.
+		for _, peer := range cfg.Peers {
+			id, addr, found := strings.Cut(peer, "=")
+			if !found || id == "" || addr == "" {
+				return nil, fmt.Errorf("invalid peer entry %q: expected format id=host:port", peer)
+			}
 			servers = append(servers, raft.Server{
-				ID:      raft.ServerID(fmt.Sprintf("peer-%d", i)),
-				Address: raft.ServerAddress(peer),
+				ID:      raft.ServerID(id),
+				Address: raft.ServerAddress(addr),
 			})
 		}
 

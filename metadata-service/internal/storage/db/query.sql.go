@@ -12,25 +12,38 @@ import (
 
 const createInstance = `-- name: CreateInstance :one
 INSERT INTO
-  instances (name, project, ip_address)
+  instances (name, project, source_node, ip_address)
 VALUES
-  (?, ?, ?) RETURNING id, name, project, ip_address, created_at, updated_at, deleted_at
+  (?, ?, ?, ?) ON CONFLICT(name, project) DO
+UPDATE
+SET
+  ip_address = excluded.ip_address,
+  source_node = excluded.source_node,
+  deleted_at = NULL,
+  updated_at = CURRENT_TIMESTAMP RETURNING id, name, project, source_node, ip_address, created_at, updated_at, deleted_at
 `
 
 type CreateInstanceParams struct {
-	Name      string
-	Project   string
-	IpAddress *string
+	Name       string
+	Project    string
+	SourceNode string
+	IpAddress  *string
 }
 
 // ===== INSTANCES QUERIES =====
 func (q *Queries) CreateInstance(ctx context.Context, arg CreateInstanceParams) (Instance, error) {
-	row := q.queryRow(ctx, q.createInstanceStmt, createInstance, arg.Name, arg.Project, arg.IpAddress)
+	row := q.queryRow(ctx, q.createInstanceStmt, createInstance,
+		arg.Name,
+		arg.Project,
+		arg.SourceNode,
+		arg.IpAddress,
+	)
 	var i Instance
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Project,
+		&i.SourceNode,
 		&i.IpAddress,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -410,7 +423,7 @@ func (q *Queries) DeleteVendorData(ctx context.Context, id int64) error {
 
 const getInstance = `-- name: GetInstance :one
 SELECT
-  id, name, project, ip_address, created_at, updated_at, deleted_at
+  id, name, project, source_node, ip_address, created_at, updated_at, deleted_at
 FROM
   instances
 WHERE
@@ -431,6 +444,7 @@ func (q *Queries) GetInstance(ctx context.Context, arg GetInstanceParams) (Insta
 		&i.ID,
 		&i.Name,
 		&i.Project,
+		&i.SourceNode,
 		&i.IpAddress,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -441,7 +455,7 @@ func (q *Queries) GetInstance(ctx context.Context, arg GetInstanceParams) (Insta
 
 const getInstanceByID = `-- name: GetInstanceByID :one
 SELECT
-  id, name, project, ip_address, created_at, updated_at, deleted_at
+  id, name, project, source_node, ip_address, created_at, updated_at, deleted_at
 FROM
   instances
 WHERE
@@ -456,6 +470,7 @@ func (q *Queries) GetInstanceByID(ctx context.Context, id int64) (Instance, erro
 		&i.ID,
 		&i.Name,
 		&i.Project,
+		&i.SourceNode,
 		&i.IpAddress,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -466,7 +481,7 @@ func (q *Queries) GetInstanceByID(ctx context.Context, id int64) (Instance, erro
 
 const getInstanceByIP = `-- name: GetInstanceByIP :one
 SELECT
-  id, name, project, ip_address, created_at, updated_at, deleted_at
+  id, name, project, source_node, ip_address, created_at, updated_at, deleted_at
 FROM
   instances
 WHERE
@@ -481,6 +496,7 @@ func (q *Queries) GetInstanceByIP(ctx context.Context, ipAddress *string) (Insta
 		&i.ID,
 		&i.Name,
 		&i.Project,
+		&i.SourceNode,
 		&i.IpAddress,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -928,9 +944,51 @@ func (q *Queries) HardDeleteInstance(ctx context.Context, id int64) error {
 	return err
 }
 
+const listActiveInstancesBySourceNode = `-- name: ListActiveInstancesBySourceNode :many
+SELECT
+  id, name, project, source_node, ip_address, created_at, updated_at, deleted_at
+FROM
+  instances
+WHERE
+  source_node = ?
+  AND deleted_at IS NULL
+`
+
+func (q *Queries) ListActiveInstancesBySourceNode(ctx context.Context, sourceNode string) ([]Instance, error) {
+	rows, err := q.query(ctx, q.listActiveInstancesBySourceNodeStmt, listActiveInstancesBySourceNode, sourceNode)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Instance
+	for rows.Next() {
+		var i Instance
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Project,
+			&i.SourceNode,
+			&i.IpAddress,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listInstances = `-- name: ListInstances :many
 SELECT
-  id, name, project, ip_address, created_at, updated_at, deleted_at
+  id, name, project, source_node, ip_address, created_at, updated_at, deleted_at
 FROM
   instances
 WHERE
@@ -952,6 +1010,7 @@ func (q *Queries) ListInstances(ctx context.Context) ([]Instance, error) {
 			&i.ID,
 			&i.Name,
 			&i.Project,
+			&i.SourceNode,
 			&i.IpAddress,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -972,7 +1031,7 @@ func (q *Queries) ListInstances(ctx context.Context) ([]Instance, error) {
 
 const listInstancesByProject = `-- name: ListInstancesByProject :many
 SELECT
-  id, name, project, ip_address, created_at, updated_at, deleted_at
+  id, name, project, source_node, ip_address, created_at, updated_at, deleted_at
 FROM
   instances
 WHERE
@@ -995,6 +1054,7 @@ func (q *Queries) ListInstancesByProject(ctx context.Context, project string) ([
 			&i.ID,
 			&i.Name,
 			&i.Project,
+			&i.SourceNode,
 			&i.IpAddress,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -1103,7 +1163,7 @@ SET
   ip_address = ?,
   updated_at = CURRENT_TIMESTAMP
 WHERE
-  id = ? RETURNING id, name, project, ip_address, created_at, updated_at, deleted_at
+  id = ? RETURNING id, name, project, source_node, ip_address, created_at, updated_at, deleted_at
 `
 
 type UpdateInstanceParams struct {
@@ -1118,6 +1178,7 @@ func (q *Queries) UpdateInstance(ctx context.Context, arg UpdateInstanceParams) 
 		&i.ID,
 		&i.Name,
 		&i.Project,
+		&i.SourceNode,
 		&i.IpAddress,
 		&i.CreatedAt,
 		&i.UpdatedAt,

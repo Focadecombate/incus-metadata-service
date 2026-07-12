@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS instances (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   project TEXT NOT NULL DEFAULT 'default',
+  source_node TEXT NOT NULL DEFAULT '', -- id of the node that synced this instance
   ip_address TEXT, -- IP address for instance identification
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

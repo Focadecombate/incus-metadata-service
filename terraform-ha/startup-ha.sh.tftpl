@@ -1,0 +1,113 @@
+#!/bin/bash
+# Zero-to-ready provisioning for a Raft HA node of the Incus metadata service.
+# Watch: gcloud compute ssh incus-ha-<node> --tunnel-through-iap -- tail -f /var/log/mds-provision.log
+# Marker: /var/lib/mds/PROVISION_DONE
+set -uxo pipefail
+export HOME=/root
+exec > >(tee -a /var/log/mds-provision.log) 2>&1
+echo "=== MDS HA provision start $(date -u) node=${node_id} ==="
+
+REPO_URL="${repo_url}"
+REPO_REF="${repo_ref}"
+SERVICE_PORT="${service_port}"
+SEED_ALIAS="${seed_image_alias}"
+BRIDGE_CIDR="10.10.10.1/24"
+BRIDGE_IP="$${BRIDGE_CIDR%%/*}"
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -y -qq curl jq git build-essential golang-go openssl incus
+incus admin init --minimal
+
+install -d /opt
+if [ ! -d /opt/mds/.git ]; then git clone "$REPO_URL" /opt/mds; fi
+git config --global --add safe.directory /opt/mds
+cd /opt/mds
+git fetch --all --quiet || true
+git checkout "$REPO_REF" || true
+git reset --hard "origin/$REPO_REF" --quiet || true
+go build -o /usr/local/bin/metadata-service ./metadata-service/cmd/server
+echo "built metadata-service from $(git rev-parse --short HEAD)"
+
+incus network set incusbr0 ipv4.address "$BRIDGE_CIDR"
+incus network set incusbr0 ipv4.nat true
+
+incus config set core.https_address 127.0.0.1:8443
+install -d /opt/mds-certs
+if [ ! -f /opt/mds-certs/client.crt ]; then
+  openssl req -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes \
+    -keyout /opt/mds-certs/client.key -out /opt/mds-certs/client.crt -subj "/CN=metadata-service"
+fi
+incus config trust add-certificate /opt/mds-certs/client.crt || true
+cp /var/lib/incus/server.crt /opt/mds-certs/server.crt
+chmod 600 /opt/mds-certs/client.key
+
+install -d /var/lib/mds /var/lib/mds/raft
+cat > /etc/systemd/system/metadata-service.service <<EOF
+[Unit]
+Description=Incus cloud-init metadata service (Raft node ${node_id})
+After=incus.service network-online.target
+Wants=incus.service
+
+[Service]
+Environment=INCUS_CONFIG_SERVER_URL=https://127.0.0.1:8443
+Environment=INCUS_CONFIG_TLS_CLIENT_CERT=/opt/mds-certs/client.crt
+Environment=INCUS_CONFIG_TLS_CLIENT_KEY=/opt/mds-certs/client.key
+Environment=INCUS_CONFIG_TLS_SERVER_CERT=/opt/mds-certs/server.crt
+Environment=DATABASE_CONFIG_DB_SOURCE=/var/lib/mds/metadata.db
+Environment=PORT=$SERVICE_PORT
+Environment=INTERNAL_ADDR=127.0.0.1:8081
+Environment=RAFT_ENABLED=true
+Environment=RAFT_NODE_ID=${node_id}
+Environment=RAFT_BIND_ADDR=${node_ip}:${raft_port}
+Environment=RAFT_PEERS=${peers}
+Environment=RAFT_BOOTSTRAP=${bootstrap}
+Environment=RAFT_DATA_DIR=/var/lib/mds/raft
+WorkingDirectory=/var/lib/mds
+ExecStart=/usr/local/bin/metadata-service
+Restart=on-failure
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl enable --now metadata-service
+
+for i in $(seq 1 30); do
+  curl -fsS "http://127.0.0.1:$SERVICE_PORT/health" >/dev/null 2>&1 && { echo "service healthy"; break; }
+  sleep 2
+done
+
+# Seed image so the leader can launch containers to generate replicated data.
+if ! incus image info "$SEED_ALIAS" >/dev/null 2>&1; then
+  incus launch images:ubuntu/24.04/cloud mds-seed
+  incus exec mds-seed -- cloud-init status --wait >/dev/null 2>&1 || true
+  incus exec mds-seed -- apt-get install -y -qq curl >/dev/null 2>&1 || true
+  incus exec mds-seed -- mkdir -p /etc/cloud/cloud.cfg.d
+  incus exec mds-seed -- tee /etc/netplan/10-dhcp.yaml >/dev/null <<'NP'
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: true
+NP
+  incus exec mds-seed -- chmod 600 /etc/netplan/10-dhcp.yaml
+  incus exec mds-seed -- tee /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg >/dev/null <<'DN'
+network: {config: disabled}
+DN
+  incus exec mds-seed -- tee /etc/cloud/cloud.cfg.d/90-nocloud-net.cfg >/dev/null <<CFG
+datasource_list: [ NoCloud ]
+datasource:
+  NoCloud:
+    seedfrom: http://$BRIDGE_IP:$SERVICE_PORT/configs/
+CFG
+  incus exec mds-seed -- cloud-init clean --logs
+  incus stop mds-seed
+  incus publish mds-seed --alias "$SEED_ALIAS"
+  incus delete mds-seed
+fi
+
+date -u > /var/lib/mds/PROVISION_DONE
+echo "=== MDS HA provision complete $(date -u) node=${node_id} ==="

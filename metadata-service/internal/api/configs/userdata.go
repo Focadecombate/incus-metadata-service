@@ -17,7 +17,22 @@ func (h *Handler) UserDataHandler(c *gin.Context) {
 	row, err := h.Database.GetInstanceUserDataByIP(c, &clientIP)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "no user data found for this instance"})
+			// GetInstanceUserDataByIP inner-joins instances, so ErrNoRows means
+			// either the IP is unknown OR the instance exists but has no
+			// user-data row. A non-2xx on user-data makes cloud-init skip the
+			// whole datasource, so a KNOWN instance with no user-data must get
+			// 200 (empty body). Only a genuinely unknown IP returns 404.
+			if _, instErr := h.Database.GetInstanceByIP(c, &clientIP); instErr != nil {
+				if errors.Is(instErr, sql.ErrNoRows) {
+					c.JSON(http.StatusNotFound, gin.H{"error": "no instance found for this IP"})
+					return
+				}
+				logs.Logger.Error().Err(instErr).Str("ip", clientIP).Msg("failed to look up instance")
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve user data"})
+				return
+			}
+
+			c.Data(http.StatusOK, "text/plain", []byte{})
 			return
 		}
 

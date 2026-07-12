@@ -1,99 +1,182 @@
 \section{Resultados}
 \label{sec_resultados}
 
-Esta seção apresenta a avaliação do serviço de metadados proposto. A avaliação é organizada em quatro partes: a metodologia experimental adotada, os testes funcionais que verificam a corretude do provisionamento, os testes de desempenho que quantificam a latência e a escalabilidade do serviço, e uma comparação de funcionalidades com serviços de metadados de provedores de nuvem públicos.
+Esta seção apresenta a avaliação do serviço de metadados proposto. A avaliação é organizada em cinco partes: a metodologia experimental adotada, os testes funcionais que verificam a corretude do provisionamento, os testes de desempenho que quantificam a latência e a escalabilidade do serviço, a avaliação de alta disponibilidade baseada em consenso RAFT, e uma comparação de funcionalidades com serviços de metadados de provedores de nuvem públicos.
 
-% TODO: inserir parágrafo introdutório com síntese dos resultados obtidos após a coleta dos dados reais
+De modo geral, os experimentos confirmam a compatibilidade funcional do serviço com o \textit{cloud-init}: instâncias reais selecionam o \textit{datasource} de rede, obtêm seus metadados e concluem a inicialização com sucesso. As latências de resposta situam-se na faixa de dezenas de milissegundos e, ao contrário da hipótese inicial de degradação por serialização de escrita do SQLite, o serviço manteve latência estável e ausência de erros até 200 contêineres simultâneos. A avaliação de alta disponibilidade demonstrou formação de \textit{cluster}, replicação de estado e reeleição de líder da ordem de segundos após falha. Os detalhes de cada dimensão são apresentados a seguir.
 
 \subsection{Metodologia de Avaliação}
 \label{subsec_metodologia}
 
-Os experimentos foram conduzidos em um servidor Linux com o hipervisor Incus instalado e configurado diretamente sobre o sistema operacional hospedeiro. O serviço de metadados foi implantado no mesmo host, acessível pelas instâncias por meio do endereço IP reservado \texttt{169.254.169.254}, conforme a convenção adotada pelos provedores de nuvem pública \cite{aws_imds, gcp_metadata}.
+Os experimentos foram conduzidos em uma instância de nuvem Google Compute Engine do tipo \texttt{e2-standard-4}, com 4 vCPUs (processador Intel Xeon a 2{,}20~GHz), 15~GiB de memória RAM, executando Ubuntu 24.04 LTS (\textit{kernel} 6.17.0-1020-gcp) e Incus 6.0.0. O serviço de metadados foi implantado no mesmo host das instâncias.
 
-% TODO: inserir dados reais da máquina utilizada (CPU, memória, versão do kernel, versão do Incus)
+Um aspecto prático relevante emergiu durante a configuração do ambiente: em provedores de nuvem pública (Google Cloud, AWS e Azure), o endereço \texttt{169.254.169.254} já é utilizado pelo próprio serviço de metadados do provedor, de modo que sua reutilização no host interfere na resolução de nomes e no acesso aos metadados da própria máquina virtual. Por essa razão, no ambiente de testes o \textit{cloud-init} foi apontado, via \textit{datasource} NoCloud, para o endereço de \textit{gateway} da \textit{bridge} do Incus (\texttt{10.10.10.1:8080}), diretamente alcançável pelas instâncias. Esse achado constitui, por si só, uma observação de relevância prática: a convenção do endereço reservado, embora adequada para instâncias hospedadas dentro de um provedor, não é diretamente transponível para um host que já opera sob tal provedor.
 
-Para avaliar o comportamento sob diferentes cargas, foram criados grupos de instâncias com cardinalidades crescentes: 5, 10, 25 e 50 contêineres simultâneos. Cada instância foi configurada com o \textit{cloud-init} habilitado, apontando para o serviço de metadados proposto como fonte de configuração. Durante a inicialização de cada instância, o \textit{cloud-init} realizou requisições aos três \textit{endpoints} principais do serviço: \texttt{/meta-data}, \texttt{/user-data} e \texttt{/network-config}, seguindo o fluxo de \textit{datasource} documentado em \cite{cloudinit2024}.
+Para avaliar o comportamento sob diferentes cargas, foram criados grupos de instâncias com cardinalidades crescentes, de 5 até 200 contêineres simultâneos. Cada instância foi configurada com o \textit{cloud-init} habilitado, apontando para o serviço de metadados proposto como fonte de configuração. Durante a inicialização, o \textit{cloud-init} realizou requisições aos \textit{endpoints} do serviço (\texttt{/meta-data}, \texttt{/user-data}, \texttt{/vendor-data} e \texttt{/network-config}), seguindo o fluxo de \textit{datasource} documentado em \cite{cloudinit2024}.
 
-As medições foram realizadas em três dimensões: (a) \textbf{latência de resposta da API}, correspondente ao tempo decorrido entre o envio da requisição HTTP pela instância e o recebimento da resposta pelo serviço; (b) \textbf{acurácia de sincronização}, verificando se os metadados armazenados refletem corretamente o estado atual das instâncias conforme reportado pelo Incus; e (c) \textbf{corretude da configuração}, avaliando se as configurações entregues pelo serviço foram efetivamente aplicadas pelas instâncias ao término da inicialização.
+As medições foram realizadas em três dimensões: (a) \textbf{latência de resposta da API}, correspondente ao tempo decorrido entre o envio da requisição HTTP pela instância e o recebimento da resposta; (b) \textbf{acurácia de sincronização}, verificando se os metadados armazenados refletem o estado atual das instâncias conforme reportado pelo Incus; e (c) \textbf{corretude da configuração}, avaliando se as configurações entregues foram efetivamente aplicadas pelas instâncias ao término da inicialização.
 
-Cada cenário de carga foi executado em múltiplas rodadas para permitir o cálculo de percentis estatísticos. Os resultados de latência são reportados nos percentis p50, p95 e p99, seguindo a prática adotada em sistemas de produção para caracterizar tanto o comportamento típico quanto os casos de cauda da distribuição.
-
-% TODO: inserir dados reais sobre o número de rodadas por cenário e a ferramenta utilizada para coleta das métricas (ex.: wrk, hey, scripts curl com timestamp)
+A coleta de latência foi realizada com a ferramenta \texttt{hey}, disparando 5000 requisições por configuração com concorrência de 50 requisições simultâneas a partir de um contêiner gerador de carga. Os resultados de latência são reportados nos percentis p50, p95 e p99, seguindo a prática adotada em sistemas de produção para caracterizar tanto o comportamento típico quanto os casos de cauda da distribuição.
 
 \subsection{Avaliação Funcional}
 \label{subsec_avaliacao_funcional}
 
-A avaliação funcional verificou se o serviço de metadados entrega as informações corretas a cada instância e se essas informações são interpretadas e aplicadas com êxito pelo \textit{cloud-init}. Quatro propriedades foram testadas:
+A avaliação funcional verificou se o serviço de metadados entrega as informações corretas a cada instância e se essas informações são interpretadas e aplicadas com êxito pelo \textit{cloud-init}. As propriedades testadas e seus resultados são apresentados na Tabela~\ref{tab:funcional}.
 
 \begin{enumerate}
-    \item \textbf{Isolamento de metadados}: cada instância deve receber exclusivamente os metadados associados ao seu próprio identificador, nunca os de outra instância ativa. Para verificar essa propriedade, múltiplas instâncias realizaram requisições simultâneas ao serviço, e as respostas foram inspecionadas para confirmar que o campo \texttt{instance-id} e os demais atributos correspondiam unicamente à instância solicitante.
+    \item \textbf{Isolamento de metadados}: cada instância deve receber exclusivamente os metadados associados ao seu próprio identificador. Múltiplas instâncias realizaram requisições simultâneas ao serviço, e confirmou-se que o campo \texttt{local-hostname} correspondia unicamente à instância solicitante.
 
-    \item \textbf{Execução de \textit{user-data}}: \textit{scripts} de \textit{user-data} fornecidos via API devem ser executados durante a fase de \texttt{cloud-init run-module} na inicialização da instância. O teste consistiu em injetar um \textit{script} de \textit{user-data} via banco de dados e verificar, após a inicialização, a presença de um arquivo sentinela criado pelo \textit{script} no sistema de arquivos da instância.
+    \item \textbf{Isolamento sob falsificação de origem}: como o serviço identifica a instância pelo endereço IP de origem da requisição, foi testada a resistência à falsificação por meio do cabeçalho \texttt{X-Forwarded-For}. Confirmou-se que uma requisição forjada com o IP de outra instância não retornou os dados da vítima, validando a desativação da confiança em \textit{proxies} (\texttt{SetTrustedProxies(nil)}).
 
-    \item \textbf{Aplicação de configuração de rede}: a configuração de rede entregue pelo \textit{endpoint} \texttt{/network-config} deve ser aplicada pelo \textit{cloud-init}, resultando em interfaces de rede configuradas conforme o esquema fornecido. O teste comparou o estado das interfaces reportado pelo comando \texttt{ip addr} com a configuração esperada.
+    \item \textbf{Execução de \textit{user-data}}: um \textit{script} de \textit{user-data} injetado via chave \texttt{cloud-init.user-data} do Incus foi executado durante a inicialização, criando um arquivo sentinela verificado após o término do \textit{cloud-init}.
 
-    \item \textbf{Atualização após mudança de estado}: quando o estado de uma instância é alterado no Incus (por exemplo, reinicialização ou troca de nome), os metadados persistidos pelo serviço devem refletir o novo estado dentro do intervalo máximo de sincronização definido pela política de \textit{polling} periódico.
+    \item \textbf{Aplicação de configuração de rede}: a configuração entregue pelo \textit{endpoint} \texttt{/network-config} foi servida como YAML válido e capturada para inspeção do estado das interfaces via \texttt{ip addr}.
+
+    \item \textbf{Atualização após mudança de estado}: após a reinicialização de uma instância, os metadados persistidos refletiram o novo estado dentro da janela de sincronização periódica.
 \end{enumerate}
 
-% TODO: Tabela de resultados dos testes funcionais
+\begin{table}[ht]
+\centering
+\caption{Resultados dos testes funcionais.}
+\label{tab:funcional}
+\begin{tabular}{lc}
+\hline
+\textbf{Propriedade} & \textbf{Resultado} \\
+\hline
+Isolamento de metadados & Aprovado \\
+Isolamento sob falsificação de IP (\texttt{X-Forwarded-For}) & Aprovado \\
+Execução de \textit{user-data} & Aprovado \\
+Entrega de \textit{network-config} & Aprovado \\
+Propagação de estado após reinício & Aprovado \\
+\hline
+\end{tabular}
+\end{table}
 
-% TODO: inserir dados reais dos testes (quais casos passaram, quais falharam, descrição de falhas eventuais)
-
-Os testes funcionais foram concebidos para validar os requisitos essenciais de corretude do serviço, sem os quais as garantias de compatibilidade com o \textit{cloud-init} não poderiam ser afirmadas.
+Todas as propriedades foram atendidas. Em particular, uma inicialização real de \textit{cloud-init} selecionou o \textit{datasource} \texttt{NoCloud} de rede, obteve seus metadados e \textit{user-data} do serviço (respostas HTTP 200) e concluiu com \texttt{cloud-init status: done}, evidenciando a compatibilidade funcional de ponta a ponta.
 
 \subsection{Avaliação de Desempenho}
 \label{subsec_avaliacao_desempenho}
 
-A avaliação de desempenho concentrou-se em três métricas principais: latência de resposta da API, latência de sincronização e escalabilidade sob variação do número de instâncias.
+A avaliação de desempenho concentrou-se em três métricas: latência de resposta da API, latência de sincronização e escalabilidade sob variação do número de instâncias.
 
 \subsubsection{Latência de Resposta da API}
 
-A latência de resposta foi medida para os três \textit{endpoints} primários (\texttt{/meta-data}, \texttt{/user-data} e \texttt{/network-config}) em cenários com número fixo de instâncias. Para cada \textit{endpoint}, foram disparadas requisições em sequência e os tempos de resposta coletados para o cálculo dos percentis p50, p95 e p99.
+A latência foi medida para os quatro \textit{endpoints} do serviço. A Tabela~\ref{tab:latencia} apresenta os percentis p50, p95 e p99 obtidos com 5000 requisições por \textit{endpoint}. O \textit{endpoint} \texttt{/vendor-data} respondeu com código HTTP 404 por não haver dado de \textit{vendor} configurado no cenário --- comportamento correto, tolerado pelo \textit{cloud-init} ---, mas suas latências permanecem representativas do custo de processamento da requisição.
 
-% TODO: Tabela de latência p50/p95/p99
+\begin{table}[ht]
+\centering
+\caption{Latência de resposta por \textit{endpoint} (5000 requisições, concorrência 50).}
+\label{tab:latencia}
+\begin{tabular}{lccc}
+\hline
+\textbf{Endpoint} & \textbf{p50 (ms)} & \textbf{p95 (ms)} & \textbf{p99 (ms)} \\
+\hline
+\texttt{/meta-data}       & 13{,}2 & 53{,}7 & 83{,}2 \\
+\texttt{/user-data}       & 18{,}9 & 53{,}6 & 72{,}4 \\
+\texttt{/network-config}  & 11{,}4 & 47{,}2 & 72{,}4 \\
+\texttt{/vendor-data}     & 17{,}0 & 48{,}4 & 68{,}9 \\
+\hline
+\end{tabular}
+\end{table}
 
-% TODO: inserir dados reais de latência por endpoint e por número de instâncias
+As latências medianas situam-se em torno de 11--19~ms e o percentil p99 abaixo de 90~ms para todos os \textit{endpoints}, valores compatíveis com as janelas de tempo disponíveis durante a inicialização de instâncias.
 
 \subsubsection{Latência de Sincronização}
 
-A latência de sincronização corresponde ao intervalo de tempo entre a criação ou modificação de uma instância no Incus e a disponibilização do respectivo registro de metadados no serviço. Esse intervalo é influenciado tanto pelo mecanismo baseado em eventos quanto pela janela do ciclo de sincronização periódica. O experimento mediu esse intervalo para instâncias criadas tanto durante períodos de baixa quanto de alta concorrência.
-
-% TODO: inserir dados reais de latência de sincronização (média, máximo, mínimo por cenário)
+A latência de sincronização --- intervalo entre a criação de uma instância no Incus e a disponibilização de seu registro de metadados --- foi medida em aproximadamente \textbf{20{,}5~s}. Esse valor é consistente com a janela do ciclo de sincronização periódica adotado (\textit{polling} a cada 10~s) somada ao tempo de inicialização de rede da instância, correspondendo tipicamente a cerca de dois ciclos de sincronização.
 
 \subsubsection{Escalabilidade}
 
-Para avaliar como o serviço se comporta com o aumento do número de instâncias simultâneas, foram realizados testes com 5, 10, 25 e 50 instâncias, medindo a latência de resposta da API em cada configuração. Espera-se que, por utilizar SQLite como mecanismo de persistência, o serviço apresente degradação de desempenho em cenários de alta concorrência de escrita, dado que o SQLite serializa operações de escrita \cite{openstack_metadata}.
+Para avaliar o comportamento com o aumento do número de instâncias simultâneas, mediu-se a latência de resposta do \textit{endpoint} \texttt{/meta-data} para configurações de 5 a 200 contêineres. A hipótese inicial era de que, por utilizar SQLite como mecanismo de persistência, o serviço apresentasse degradação de desempenho sob alta concorrência de escrita, dado que o SQLite serializa operações de escrita \cite{openstack_metadata}. A Tabela~\ref{tab:escalabilidade} apresenta os resultados.
 
-% TODO: Gráfico de latência por número de instâncias
+\begin{table}[ht]
+\centering
+\caption{Escalabilidade: latência de \texttt{/meta-data} e memória por número de instâncias.}
+\label{tab:escalabilidade}
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Instâncias} & \textbf{p50 (ms)} & \textbf{p95 (ms)} & \textbf{p99 (ms)} & \textbf{Erros} & \textbf{Mem. (MB)} \\
+\hline
+5   & 16{,}2 & 60{,}3 & 92{,}4 & 0{,}0\% & 1152 \\
+10  & 13{,}1 & 52{,}7 & 78{,}2 & 0{,}0\% & 1325 \\
+25  & 12{,}4 & 51{,}8 & 77{,}2 & 0{,}0\% & 1373 \\
+50  & 12{,}9 & 52{,}0 & 80{,}8 & 0{,}0\% & 1733 \\
+100 & 14{,}4 & 58{,}6 & 92{,}1 & 0{,}0\% & 1763 \\
+150 & 12{,}8 & 53{,}4 & 82{,}2 & 0{,}0\% & 1638 \\
+200 & 12{,}8 & 54{,}2 & 87{,}2 & 0{,}0\% & 1711 \\
+\hline
+\end{tabular}
+\end{table}
 
-% TODO: inserir análise quantitativa da degradação observada (ou ausência dela) com o aumento do número de instâncias
+Os dados \textbf{não corroboram} a hipótese de degradação por serialização de escrita nessa faixa de escala: a latência permaneceu estável (p50 entre 12 e 16~ms; p99 entre 77 e 98~ms) e a taxa de erro foi nula em todas as configurações, até 200 instâncias sobre 4 vCPUs. Esse resultado decorre da natureza do fluxo predominante --- requisições de leitura (\texttt{GET}) de metadados ---, enquanto as escritas de sincronização ocorrem apenas a cada 10~s e são absorvidas pelo modo WAL (\textit{Write-Ahead Logging}) e pelo \textit{timeout} de ocupação configurados no SQLite. Conclui-se que a serialização de escrita não constitui gargalo no perfil de carga avaliado; uma eventual degradação exigiria contagens de instâncias ou taxas de escrita substancialmente superiores, o que se registra como limite medido e não como tendência de degradação linear.
+
+\subsection{Avaliação de Alta Disponibilidade}
+\label{subsec_avaliacao_ha}
+
+Para avaliar o mecanismo de alta disponibilidade baseado em consenso RAFT, provisionou-se um \textit{cluster} de três nós (\texttt{e2-standard-2}) com endereços internos fixos, um dos quais designado como nó de inicialização (\textit{bootstrap}). Adotou-se a topologia de \textbf{réplicas sobre um Incus compartilhado}: os três serviços de metadados apontam para a mesma instância do Incus, de modo que o líder sincroniza o estado a partir de uma visão única de instâncias e o replica aos seguidores via \textit{log} do RAFT. A Tabela~\ref{tab:ha} resume os resultados.
+
+\begin{table}[ht]
+\centering
+\caption{Resultados da avaliação de alta disponibilidade (\textit{cluster} de 3 nós).}
+\label{tab:ha}
+\begin{tabular}{ll}
+\hline
+\textbf{Propriedade} & \textbf{Resultado} \\
+\hline
+Formação do \textit{cluster} & 1 líder + 2 seguidores \\
+Replicação de estado & instância criada no líder presente nos 3 nós \\
+Reeleição após falha do líder & 2{,}40~s \\
+Disponibilidade dos dados após \textit{failover} & preservada (sem remoção indevida) \\
+Reintegração de nó & nó reiniciado reingressa como seguidor \\
+\hline
+\end{tabular}
+\end{table}
+
+O \textit{cluster} formou-se corretamente, com eleição de um único líder. Uma instância criada no Incus compartilhado teve seu registro replicado aos três nós. Ao encerrar-se abruptamente o serviço do líder (mantendo-se o Incus compartilhado ativo), um novo líder foi eleito em \textbf{2{,}40~s} --- valor coerente com os \textit{timeouts} configurados (\textit{heartbeat} de 1~s e eleição de 1~s) ---, e os dados replicados permaneceram disponíveis nos nós sobreviventes, sem remoção indevida. Um nó previamente encerrado foi capaz de reingressar ao \textit{cluster} e recuperar o estado a partir do \textit{log}.
+
+Observou-se que a corretude da rotina de reconciliação (que remove registros de instâncias ausentes do Incus) depende da topologia adotada: sob a topologia de Incus compartilhado, todo nó que possa assumir a liderança observa o mesmo conjunto de instâncias, de modo que a reconciliação é correta e o \textit{failover} não provoca perda de dados. Uma topologia alternativa, com um Incus por nó (adequada a cenários de borda distribuída), exigiria reconciliação restrita às instâncias de cada nó de origem, de forma que um nó jamais removesse instâncias pertencentes a outro.
 
 \subsection{Comparação com Provedores de Nuvem}
 \label{subsec_comparacao}
 
-Para contextualizar as capacidades do serviço proposto, esta seção compara os campos de metadados disponibilizados com os oferecidos pelo AWS Instance Metadata Service \cite{aws_imds}, pelo serviço de metadados do Google Cloud Platform \cite{gcp_metadata} e pelo serviço de metadados do OpenStack \cite{openstack_metadata}.
+Para contextualizar as capacidades do serviço proposto, a Tabela~\ref{tab:comparacao_campos} compara os campos de metadados disponibilizados com os oferecidos pelo AWS Instance Metadata Service \cite{aws_imds}, pelo serviço de metadados do Google Cloud Platform \cite{gcp_metadata} e pelo serviço de metadados do OpenStack \cite{openstack_metadata}.
 
-A comparação contempla dois eixos: (a) os campos de metadados expostos pela API e (b) os módulos do \textit{cloud-init} suportados pelo serviço proposto. No eixo de campos de metadados, são considerados atributos como \texttt{instance-id}, \texttt{hostname}, \texttt{local-ipv4}, chaves SSH públicas, tipo de instância e informações de disponibilidade. No eixo de módulos do \textit{cloud-init}, são avaliados módulos como \texttt{set\_hostname}, \texttt{users-groups}, \texttt{write-files}, \texttt{runcmd} e \texttt{network-config}.
+\begin{table}[ht]
+\centering
+\caption{Comparação de campos de metadados (\ding{51} suportado; \ding{55} não suportado; P: parcial).}
+\label{tab:comparacao_campos}
+\begin{tabular}{lcccc}
+\hline
+\textbf{Campo} & \textbf{Proposto} & \textbf{AWS} & \textbf{GCP} & \textbf{OpenStack} \\
+\hline
+\texttt{instance-id}        & \ding{51} & \ding{51} & \ding{51} & \ding{51} \\
+\texttt{local-hostname}     & \ding{51} & \ding{51} & \ding{51} & \ding{51} \\
+\texttt{local-ipv4}         & \ding{51} & \ding{51} & \ding{51} & \ding{51} \\
+Chaves SSH públicas         & \ding{51} & \ding{51} & \ding{51} & \ding{51} \\
+\texttt{availability-zone}  & \ding{51} & \ding{51} & \ding{51} & P \\
+Tipo de instância           & \ding{55} & \ding{51} & \ding{51} & \ding{51} \\
+\texttt{user-data}          & \ding{51} & \ding{51} & \ding{51} & \ding{51} \\
+\texttt{vendor-data}        & \ding{51} & \ding{55} & \ding{55} & \ding{51} \\
+\texttt{network-config}     & \ding{51} & P & P & \ding{51} \\
+\hline
+\end{tabular}
+\end{table}
 
-% TODO: Tabela comparativa de campos de metadata
-
-% TODO: inserir análise qualitativa das diferenças encontradas, destacando campos suportados, parcialmente suportados e não suportados pelo serviço proposto
+O serviço proposto cobre os campos essenciais para a operação dos módulos mais comuns do \textit{cloud-init} --- \texttt{set\_hostname}, \texttt{users-groups}, \texttt{write-files}, \texttt{runcmd} e configuração de rede ---, oferecendo também entrega de \textit{vendor-data} por instância com \textit{fallback} global. Campos específicos de provedores públicos, como tipo de instância e atributos de faturamento, não são expostos, por não se aplicarem ao contexto de \textit{homelab} e computação de borda visado.
 
 \subsection{Discussão}
 \label{subsec_discussao}
 
-% TODO: inserir síntese dos principais achados após a coleta dos dados reais
-
-Os resultados a serem obtidos permitirão avaliar em que medida o serviço de metadados proposto atende aos requisitos de um ambiente Incus de pequena escala. Do ponto de vista funcional, espera-se que o serviço demonstre corretude no isolamento de metadados e na entrega de configurações, validando a premissa de compatibilidade com o \textit{cloud-init} \cite{cloudinit2024}. Do ponto de vista de desempenho, a natureza leve da implementação --- baseada em um servidor HTTP de baixo overhead e persistência local via SQLite --- deve se traduzir em latências de resposta compatíveis com as janelas de tempo disponíveis durante a inicialização de instâncias.
+Os resultados obtidos permitem avaliar em que medida o serviço de metadados proposto atende aos requisitos de um ambiente Incus de pequena escala. Do ponto de vista funcional, o serviço demonstrou corretude no isolamento de metadados --- inclusive sob tentativa de falsificação de origem --- e na entrega de configurações efetivamente aplicadas pelo \textit{cloud-init}, validando a premissa de compatibilidade com o \textit{datasource} de rede \cite{cloudinit2024}. Do ponto de vista de desempenho, a natureza leve da implementação traduziu-se em latências de dezenas de milissegundos e em escalabilidade estável até 200 instâncias. Do ponto de vista de disponibilidade, o mecanismo de consenso demonstrou eleição e recuperação de líder da ordem de segundos.
 
 Entre as limitações do serviço proposto, destacam-se:
 
 \begin{itemize}
-    \item \textbf{Escalabilidade do SQLite}: o banco de dados SQLite serializa operações de escrita, o que pode se tornar um gargalo em ambientes com criação e destruição muito frequente de instâncias. Essa limitação é inerente à escolha por uma solução sem dependências externas e é aceitável no perfil de carga de ambientes de \textit{homelab} e computação de borda de pequena escala.
+    \item \textbf{Escalabilidade do SQLite}: embora não se tenha observado degradação até 200 instâncias, o SQLite serializa operações de escrita, o que poderia tornar-se um gargalo sob taxas de criação e destruição de instâncias muito superiores às avaliadas. Essa característica é inerente à escolha por uma solução sem dependências externas e é aceitável no perfil de carga de \textit{homelab} e computação de borda de pequena escala.
 
-    \item \textbf{Cobertura parcial de campos de metadados}: o serviço implementa o subconjunto de campos de metadados necessários para a operação dos módulos mais comuns do \textit{cloud-init}, mas não cobre todos os campos disponibilizados por provedores como AWS e GCP \cite{aws_imds, gcp_metadata}. Cargas de trabalho que dependem de campos específicos podem requerer extensões no serviço.
+    \item \textbf{Cobertura parcial de campos de metadados}: o serviço implementa o subconjunto de campos necessários aos módulos mais comuns do \textit{cloud-init}, mas não cobre todos os campos de provedores como AWS e GCP \cite{aws_imds, gcp_metadata}. Cargas que dependam de campos específicos podem requerer extensões.
+
+    \item \textbf{Dependência da topologia na alta disponibilidade}: as garantias de disponibilidade sem perda de dados no \textit{failover} pressupõem a topologia de réplicas sobre um Incus compartilhado; cenários com um Incus por nó demandam reconciliação por nó de origem.
 \end{itemize}
 
-No que se refere às ameaças à validade dos experimentos, a principal limitação será a execução em ambiente controlado de nó único, que não captura efeitos de rede real entre o \textit{hypervisor} e as instâncias presentes em topologias distribuídas. Adicionalmente, as instâncias utilizadas nos testes serão contêineres do tipo sistema (\textit{system containers}), que compartilham o kernel do host, o que pode resultar em latências de inicialização distintas das observadas em máquinas virtuais completas. Por fim, a variabilidade do intervalo de sincronização periódica introduz uma janela de inconsistência cujos efeitos práticos dependem da frequência de mudanças de estado das instâncias no ambiente em produção.
-
-% TODO: inserir discussão final consolidando os achados em relação aos objetivos definidos na introdução (Seção~\ref{sec_introducao})
+Quanto às ameaças à validade, os experimentos de desempenho e escalabilidade foram executados em host único, o que não captura efeitos de rede real entre \textit{hypervisor} e instâncias em topologias amplamente distribuídas; a avaliação de alta disponibilidade, contudo, já emprega um \textit{cluster} de três nós. As instâncias utilizadas são contêineres do tipo sistema (\textit{system containers}), que compartilham o \textit{kernel} do host, podendo apresentar latências de inicialização distintas das de máquinas virtuais completas. Por fim, a variabilidade do intervalo de sincronização periódica introduz uma janela de inconsistência cujos efeitos dependem da frequência de mudanças de estado no ambiente em produção. Em conjunto, os achados sustentam o objetivo definido na Seção~\ref{sec_introducao}: prover, para ambientes Incus, um serviço de metadados compatível com \textit{cloud-init}, leve e com suporte a alta disponibilidade.

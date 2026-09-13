@@ -18,8 +18,8 @@
 Arta{\v{c}}, M., Borovšak, T., Di~Nitto, E., Guerriero, M., and Tamburri,
   D.~A. (2017).
 \newblock Devops: Introducing infrastructure-as-code.
-\newblock {\em IEEE/ACM 39th International Conference on Software Engineering
-  Companion (ICSE-C)}, pages 497--498.
+\newblock In {\em 2017 IEEE/ACM 39th International Conference on Software
+  Engineering Companion (ICSE-C)}, pages 497--498. IEEE.
 
 \bibitem[Bollig et~al., 2018]{bollig2018leveraging}
 Bollig, E.~F., Allan, G.~T., Lynch, B.~J., Huerta, Y.~A., Mix, M., Munsell,
@@ -80,16 +80,16 @@ Cheshire, S., Aboba, B., and Guttman, E. (2005).
 {Google Cloud} (2024).
 \newblock About {VM} metadata --- {Google Cloud} documentation.
 
-\bibitem[Gr{\"a}ber, 2023]{stgraber2023}
-Gr{\"a}ber, S. (2023).
-\newblock Incus as an alternative to {LXD}.
+\bibitem[Graber, 2023]{stgraber2023}
+Graber, S. (2023).
+\newblock Releasing {Incus} 0.1.
 
 \bibitem[Guerriero et~al., 2019]{guerriero2019iac}
 Guerriero, M., Garriga, M., Tamburri, D.~A., Palomba, F., and Lago, P. (2019).
 \newblock Adoption, support, and challenges of infrastructure-as-code: Insights
   from industry.
-\newblock {\em IEEE International Conference on Software Maintenance and
-  Evolution (ICSME)}, pages 580--589.
+\newblock In {\em 2019 IEEE International Conference on Software Maintenance
+  and Evolution (ICSME)}, pages 580--589. IEEE.
 
 \bibitem[{HashiCorp}, 2024]{hashicorp_raft}
 {HashiCorp} (2024).
@@ -100,9 +100,23 @@ Guerriero, M., Garriga, M., Tamburri, D.~A., Palomba, F., and Lago, P. (2019).
 Hipp, D.~R. (2024).
 \newblock {SQLite} --- small. fast. reliable. choose any three.
 
+\bibitem[{Linux Containers}, 2023]{incus_announcement}
+{Linux Containers} (2023).
+\newblock Introducing {Incus}.
+
 \bibitem[{Linux Containers}, 2024]{incus2024}
 {Linux Containers} (2024).
 \newblock Incus --- system container and virtual machine manager.
+
+\bibitem[{Linux Containers Community}, 2024]{incus_cloudinit_forum}
+{Linux Containers Community} (2024).
+\newblock Incus cloud-init \& {LXD} datasource.
+\newblock Linux Containers Forum.
+
+\bibitem[Mell and Grance, 2011]{mell2011nist}
+Mell, P. and Grance, T. (2011).
+\newblock The {NIST} definition of cloud computing.
+\newblock {\em NIST Special Publication}, 800(145):7.
 
 \bibitem[{Microsoft}, 2024]{azure_imds}
 {Microsoft} (2024).
@@ -113,9 +127,10 @@ Hipp, D.~R. (2024).
 \newblock T1552.005: Unsecured credentials --- cloud instance metadata {API}.
 
 \bibitem[Novaes~Neto et~al., 2020]{novaes2020capital}
-Novaes~Neto, G., Madnick, S., Moraes, A., and Borges, N. (2020).
-\newblock A case study of the capital one data breach.
-\newblock {\em MIT Sloan School Working Paper}, (2020-07).
+Novaes~Neto, N., Madnick, S., de~Paula, A. M.~G., and Borges, N.~M. (2020).
+\newblock A case study of the {Capital One} data breach.
+\newblock Working Paper CISL 2020-07, MIT Sloan School of Management,
+  Cybersecurity Interdisciplinary Systems Laboratory (CISL), Cambridge, MA.
 
 \bibitem[Ongaro and Ousterhout, 2014]{ongaro2014raft}
 Ongaro, D. and Ousterhout, J. (2014).
@@ -126,6 +141,11 @@ Ongaro, D. and Ousterhout, J. (2014).
 \bibitem[{OpenStack Foundation}, 2024]{openstack_metadata}
 {OpenStack Foundation} (2024).
 \newblock Metadata service --- {OpenStack} documentation.
+
+\bibitem[Shi et~al., 2016]{shi2016}
+Shi, W., Cao, J., Zhang, Q., Li, Y., and Xu, L. (2016).
+\newblock Edge computing: Vision and challenges.
+\newblock {\em IEEE Internet of Things Journal}, 3(5):637--646.
 
 \bibitem[Sousa, 2018]{sousa2018computacao}
 Sousa, J. V.~d. (2018).

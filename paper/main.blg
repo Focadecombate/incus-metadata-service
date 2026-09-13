@@ -3,46 +3,44 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: main.aux
 The style file: apalike.bst
 Database file #1: references.bib
-Warning--there's a number but no volume in novaes2020capital
-You've used 29 entries,
+You've used 33 entries,
             1911 wiz_defined-function locations,
-            586 strings with 7506 characters,
-and the built_in function-call counts, 8627 in all, are:
-= -- 871
-> -- 341
-< -- 26
-+ -- 121
-- -- 110
-* -- 624
-:= -- 1632
-add.period$ -- 70
-call.type$ -- 29
-change.case$ -- 200
-chr.to.int$ -- 22
-cite$ -- 30
-duplicate$ -- 335
-empty$ -- 527
-format.name$ -- 141
-if$ -- 1631
+            610 strings with 8083 characters,
+and the built_in function-call counts, 9979 in all, are:
+= -- 1008
+> -- 396
+< -- 30
++ -- 141
+- -- 128
+* -- 733
+:= -- 1881
+add.period$ -- 83
+call.type$ -- 33
+change.case$ -- 229
+chr.to.int$ -- 26
+cite$ -- 33
+duplicate$ -- 386
+empty$ -- 618
+format.name$ -- 165
+if$ -- 1894
 int.to.chr$ -- 8
 int.to.str$ -- 0
-missing$ -- 7
-newline$ -- 128
-num.names$ -- 87
-pop$ -- 139
+missing$ -- 8
+newline$ -- 147
+num.names$ -- 99
+pop$ -- 159
 preamble$ -- 1
-purify$ -- 200
+purify$ -- 229
 quote$ -- 0
-skip$ -- 294
+skip$ -- 330
 stack$ -- 0
-substring$ -- 448
-swap$ -- 36
-text.length$ -- 4
+substring$ -- 522
+swap$ -- 38
+text.length$ -- 5
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 174
-warning$ -- 1
-while$ -- 67
+type$ -- 198
+warning$ -- 0
+while$ -- 77
 width$ -- 0
-write$ -- 323
-(There was 1 warning)
+write$ -- 374

@@ -1,7 +1,7 @@
 \section{Proposta}
 \label{sec_proposta}
 
-Este trabalho propõe o desenvolvimento de um serviço de metadados compatível com cloud-init voltado a instâncias gerenciadas pelo Incus \cite{incus2024}. O objetivo é viabilizar a configuração automática de contêineres e máquinas virtuais no momento de sua inicialização, por meio do protocolo de metadados já consolidado pelo cloud-init \cite{cloudinit2024}, sem a necessidade de configuração manual por instância.
+Este trabalho propõe o desenvolvimento de um serviço de metadados compatível com cloud-init voltado a instâncias gerenciadas pelo Incus \citep{incus2024}. O objetivo é viabilizar a configuração automática de contêineres e máquinas virtuais no momento de sua inicialização, por meio do protocolo de metadados já consolidado pelo cloud-init \citep{cloudinit2024}, sem a necessidade de configuração manual por instância.
 
 O cloud-init é amplamente utilizado em ambientes de nuvem pública para realizar tarefas como definição de hostname, injeção de chaves SSH, configuração de rede e execução de scripts na primeira inicialização. Contudo, o Incus não oferece nativamente um serviço de metadados acessível via HTTP pelas instâncias, o que impede o uso do cloud-init em seu modo de operação padrão baseado em datasource de rede. A proposta preenche essa lacuna ao expor uma API REST que as instâncias podem consultar durante o boot, identificando-se pelo próprio endereço IP de origem.
 
@@ -15,14 +15,20 @@ Os componentes são organizados da seguinte forma:
 \begin{itemize}
     \item \textbf{cmd/server}: Ponto de entrada da aplicação. Responsável por inicializar e conectar todos os demais componentes, incluindo o banco de dados, o barramento de eventos, o agendador de tarefas e o servidor HTTP.
 
-    \item \textbf{internal/api}: Camada HTTP da aplicação, implementada com o framework Gin \cite{gin2024}. Divide-se em dois grupos de rotas: endpoints públicos, acessíveis pelas instâncias em \texttt{/configs/*}, que entregam os dados de metadados, user-data, vendor-data e network-config; e endpoints internos em \texttt{/internal/*}, destinados a operações de gerenciamento.
+    \item \textbf{internal/api}: Camada HTTP da aplicação, implementada com o framework Gin \citep{gin2024}. Divide-se em dois grupos de rotas: endpoints públicos, acessíveis pelas instâncias em \texttt{/configs/*}, que entregam os dados de metadados, user-data, vendor-data e network-config; e endpoints internos em \texttt{/internal/*}, destinados a operações de gerenciamento.
 
     \item \textbf{internal/events}: Módulo de sincronização orientada a eventos, utilizando o GoEventBus. Implementa um modelo de publicação e assinatura (\textit{pub/sub}) que desacopla o agendamento da execução da sincronização com o Incus.
 
-    \item \textbf{internal/storage}: Camada de persistência baseada em SQLite \cite{sqlite2024}, com queries geradas de forma estática e com segurança de tipos pelo SQLC. Armazena os registros de instâncias, seus metadados cloud-init, user-data, vendor-data e configurações de rede.
+    \item \textbf{internal/storage}: Camada de persistência baseada em SQLite \citep{sqlite2024}, com queries geradas de forma estática e com segurança de tipos pelo SQLC. Armazena os registros de instâncias, seus metadados cloud-init, user-data, vendor-data e configurações de rede.
+
+    \item \textbf{internal/consensus}: Módulo opcional de consenso distribuído baseado na biblioteca \texttt{hashicorp/raft}, detalhado na Seção~\ref{subsec_raft}. Quando habilitado, as operações de escrita são submetidas ao \textit{log} replicado antes de serem aplicadas ao banco de dados local de cada nó.
+
+    \item \textbf{internal/telemetry}: Instrumentação de métricas com OpenTelemetry, exportadas no formato Prometheus pelo endpoint \texttt{/metrics}.
 
     \item \textbf{pkg/types}: Definições de tipos de dados utilizados em toda a aplicação, garantindo compatibilidade com as estruturas esperadas pelo cloud-init.
 \end{itemize}
+
+Na Figura~\ref{fig:arquitetura}, a escrita direta do módulo de eventos na camada de armazenamento corresponde ao modo de nó único; com o consenso habilitado, as escritas seguem o caminho pelo módulo de consenso.
 
 \begin{figure}[ht!]
     \centering
@@ -105,7 +111,7 @@ Para que o serviço consiga responder corretamente às requisições das instân
         \item Constrói e persiste os metadados cloud-init, incluindo \texttt{instance-id}, hostname, endereços IP, chaves SSH públicas, informações de posicionamento (\textit{placement}) e interfaces de rede. As chaves SSH são extraídas das chaves de configuração \texttt{user.meta-data} (campo \texttt{public-keys} em YAML) e \texttt{user.ssh-keys} (lista separada por quebras de linha);
         \item Armazena o user-data a partir da chave de configuração \texttt{cloud-init.user-data} presente na configuração da instância no Incus;
         \item Armazena o vendor-data a partir da chave de configuração \texttt{cloud-init.vendor-data} do Incus, permitindo que perfis e configurações específicas do provedor sejam entregues por instância;
-        \item Constrói a configuração de rede: caso a chave \texttt{cloud-init.network-config} esteja definida na configuração da instância no Incus, utiliza-a diretamente, permitindo ao administrador especificar configurações de rede estáticas, \textit{bonds}, VLANs ou DNS personalizado; caso contrário, gera automaticamente a configuração no formato \textit{Networking Config Version 2}~\cite{cloudinit_netv2}, baseada na especificação Netplan, a partir das interfaces reais reportadas pelo estado da instância;
+        \item Constrói a configuração de rede: caso a chave \texttt{cloud-init.network-config} esteja definida na configuração da instância no Incus, utiliza-a diretamente, permitindo ao administrador especificar configurações de rede estáticas, \textit{bonds}, VLANs ou DNS personalizado; caso contrário, gera automaticamente a configuração no formato \textit{Networking Config Version 2}~\citep{cloudinit_netv2}, baseada na especificação Netplan, a partir das interfaces reais reportadas pelo estado da instância;
         \item Atualiza o estado da instância no banco de dados, incluindo status textual e código de status numérico.
     \end{itemize}
 \end{enumerate}
@@ -115,7 +121,7 @@ Esse modelo orientado a eventos garante que o estado armazenado permaneça consi
 \subsection{Endpoints da API}
 \label{subsec_endpoints}
 
-Os endpoints públicos do serviço seguem o modelo do datasource \textit{NoCloud} HTTP do cloud-init~\cite{cloudinit_nocloud}, permitindo que instâncias consultem seus próprios dados de configuração a partir do endereço IP de origem da requisição. Os endpoints disponíveis são:
+Os endpoints públicos do serviço seguem o modelo do datasource \textit{NoCloud} HTTP do cloud-init~\citep{cloudinit_nocloud}, permitindo que instâncias consultem seus próprios dados de configuração a partir do endereço IP de origem da requisição. Os endpoints disponíveis são:
 
 \begin{itemize}
     \item \textbf{\texttt{GET /configs/meta-data}}: Retorna os metadados da instância no formato JSON ou YAML, incluindo \texttt{instance-id}, hostname, endereços IP, chaves SSH públicas (\texttt{public-keys}) e informações de rede. A instância é identificada pelo seu endereço IP de origem.
@@ -126,19 +132,17 @@ Os endpoints públicos do serviço seguem o modelo do datasource \textit{NoCloud
 
     \item \textbf{\texttt{GET /configs/vendor-data}}: Retorna dados de configuração específicos do fornecedor (\textit{vendor-data}), que complementam o user-data sem sobrescrevê-lo. O serviço prioriza o vendor-data por instância, extraído da chave \texttt{cloud-init.vendor-data} do Incus; caso não exista, retorna o vendor-data global configurado pela API de gerenciamento.
 
-    \item \textbf{\texttt{GET /configs/network-config}}: Retorna a configuração de rede da instância. Quando a chave \texttt{cloud-init.network-config} está definida na configuração da instância no Incus, o conteúdo definido pelo administrador é servido diretamente; caso contrário, uma configuração no formato \textit{Networking Config Version 2}~\cite{cloudinit_netv2} é gerada automaticamente a partir das interfaces reais reportadas pelo Incus.
+    \item \textbf{\texttt{GET /configs/network-config}}: Retorna a configuração de rede da instância. Quando a chave \texttt{cloud-init.network-config} está definida na configuração da instância no Incus, o conteúdo definido pelo administrador é servido diretamente; caso contrário, uma configuração no formato \textit{Networking Config Version 2}~\citep{cloudinit_netv2} é gerada automaticamente a partir das interfaces reais reportadas pelo Incus.
 \end{itemize}
 
-Além dos endpoints públicos, o serviço disponibiliza endpoints internos no prefixo \texttt{/internal/} para operações de gerenciamento de vendor-data, incluindo criação, leitura, atualização e remoção (CRUD) de registros por instância. Esses endpoints são destinados ao uso administrativo e não são expostos diretamente às instâncias.
+Além dos endpoints públicos, o serviço disponibiliza endpoints internos no prefixo \texttt{/internal/} para operações de gerenciamento de vendor-data, permitindo criar, consultar e atualizar registros identificados por nome de fornecedor (\texttt{/internal/vendor/:vendor\_name/data}). Esses endpoints são destinados ao uso administrativo e não são expostos diretamente às instâncias.
 
 \subsection{Descoberta do Serviço pelas Instâncias}
 \label{subsec_descoberta}
 
-Para que o cloud-init nas instâncias localize o serviço de metadados de forma transparente, o serviço adota a mesma convenção utilizada pelos provedores de nuvem pública: o endereço \textit{link-local} \texttt{169.254.169.254} \cite{aws_imds, gcp_metadata}. Esse endereço é adicionado à interface de ponte gerenciada pelo Incus (\texttt{incusbr0}), tornando o serviço acessível a todas as instâncias conectadas à rede do hipervisor.
+O serviço adota o \textit{datasource} \textit{NoCloud} do cloud-init em modo de rede~\citep{cloudinit_nocloud}: o parâmetro \texttt{seedfrom} aponta para o prefixo \texttt{/configs/} do serviço e, durante a inicialização, o cloud-init concatena esse prefixo com os caminhos padrão (\texttt{meta-data}, \texttt{user-data}, \texttt{vendor-data} e \texttt{network-config}) para compor as URLs de consulta. Como a configuração do \textit{datasource} precisa estar disponível antes de o cloud-init obter qualquer dado, o \texttt{seedfrom} não pode ser entregue pelo próprio serviço. Ele é definido em um arquivo de configuração do cloud-init (\texttt{/etc/cloud/cloud.cfg.d/90-nocloud-net.cfg}) gravado em uma imagem-base publicada no Incus, a partir da qual as instâncias são criadas. Trata-se de uma configuração feita uma única vez, na imagem, e não por instância; nenhum agente adicional é necessário dentro das instâncias.
 
-Como o cloud-init realiza requisições na porta 80 por padrão, uma regra de redirecionamento NAT encaminha o tráfego destinado a \texttt{169.254.169.254:80} para a porta em que o serviço está em execução. Dessa forma, nenhuma configuração de rede adicional é necessária dentro das instâncias.
-
-O datasource utilizado é o \textit{NoCloud} em modo de rede (\texttt{dsmode: net}), configurado no perfil do Incus com o parâmetro \texttt{seedfrom} apontando para o prefixo \texttt{/configs/} do serviço. Durante a inicialização, o cloud-init concatena o \texttt{seedfrom} com os caminhos padrão (\texttt{meta-data}, \texttt{user-data}, \texttt{network-config}) para compor as URLs de consulta.
+O endereço para o qual o \texttt{seedfrom} aponta admite duas formas. A primeira reproduz a convenção dos provedores de nuvem pública, o endereço \textit{link-local} \texttt{169.254.169.254}~\citep{aws_imds, gcp_metadata}: esse endereço é adicionado à interface de ponte gerenciada pelo Incus (\texttt{incusbr0}) e, como o cloud-init realiza requisições na porta 80 por padrão, uma regra de redirecionamento NAT encaminha o tráfego destinado a \texttt{169.254.169.254:80} para a porta em que o serviço está em execução. Essa forma é adequada a hosts dedicados, como em \textit{homelabs} e servidores \textit{bare metal}. A segunda forma usa diretamente o endereço de \textit{gateway} da ponte do Incus e a porta do serviço, sem NAT, e é necessária quando o próprio host é uma máquina virtual de um provedor de nuvem, no qual o endereço \texttt{169.254.169.254} já está em uso pelo serviço de metadados do provedor. A avaliação experimental (Seção~\ref{sec_resultados}) utilizou a segunda forma.
 
 \subsection{Tecnologias Utilizadas}
 \label{subsec_tecnologias}
@@ -146,25 +150,25 @@ O datasource utilizado é o \textit{NoCloud} em modo de rede (\texttt{dsmode: ne
 A escolha das tecnologias que compõem o serviço foi guiada por critérios de desempenho, simplicidade operacional e adequação ao problema:
 
 \begin{itemize}
-    \item \textbf{Go}: A linguagem oferece desempenho próximo ao de linguagens compiladas de baixo nível, com um modelo de concorrência baseado em goroutines que facilita o tratamento paralelo de eventos. Além disso, o processo de compilação gera um único binário estático, simplificando o processo de implantação em ambientes de borda.
+    \item \textbf{Go}: A linguagem oferece desempenho próximo ao de linguagens de mais baixo nível, como C, com um modelo de concorrência baseado em goroutines que facilita o tratamento paralelo de eventos. Além disso, o processo de compilação gera um único binário estático, simplificando o processo de implantação em ambientes de borda.
 
-    \item \textbf{Gin} \cite{gin2024}: Framework HTTP de alta performance para Go, com roteamento eficiente e baixo overhead. Sua API expressiva permite definir grupos de rotas e middlewares de forma clara, facilitando a separação entre os endpoints públicos e internos.
+    \item \textbf{Gin} \citep{gin2024}: Framework HTTP de alta performance para Go, com roteamento eficiente e baixo overhead. Sua API expressiva permite definir grupos de rotas e middlewares de forma clara, facilitando a separação entre os endpoints públicos e internos.
 
-    \item \textbf{SQLite + SQLC} \cite{sqlite2024}: O SQLite é um banco de dados relacional embutido, sem necessidade de processo servidor separado, adequado para serviços com requisitos de implantação simplificados. O SQLC complementa essa escolha ao gerar código Go com tipagem estática a partir de queries SQL declaradas, eliminando o uso de ORMs genéricos e reduzindo a superfície de erros em tempo de execução.
+    \item \textbf{SQLite + SQLC} \citep{sqlite2024}: O SQLite é um banco de dados relacional embutido, sem necessidade de processo servidor separado, adequado para serviços com requisitos de implantação simplificados. O SQLC complementa essa escolha ao gerar código Go com tipagem estática a partir de queries SQL declaradas, eliminando o uso de ORMs genéricos e reduzindo a superfície de erros em tempo de execução.
 
     \item \textbf{GoEventBus}: Biblioteca de barramento de eventos para Go que implementa o padrão publicação/assinatura. Permite desacoplar o agendamento da sincronização da lógica de processamento por instância, tornando o sistema mais modular e testável.
 
     \item \textbf{gocron}: Biblioteca de agendamento de tarefas periódicas para Go, utilizada para disparar o ciclo de sincronização a cada 10 segundos de forma confiável e configurável.
 
-    \item \textbf{hashicorp/raft}: Biblioteca de consenso distribuído para Go que implementa o protocolo RAFT \cite{ongaro2014raft}. Utilizada para coordenar escritas em implantações com múltiplos nós, garantindo que apenas o líder eleito realize sincronizações com o Incus e proponha alterações ao cluster.
+    \item \textbf{hashicorp/raft}: Biblioteca de consenso distribuído para Go que implementa o protocolo RAFT \citep{ongaro2014raft}. Utilizada para coordenar escritas em implantações com múltiplos nós, garantindo que apenas o líder eleito realize sincronizações com o Incus e proponha alterações ao cluster.
 
-    \item \textbf{OpenTelemetry + Prometheus}~\cite{opentelemetry2024, prometheus2024}: O serviço utiliza o OpenTelemetry como framework de instrumentação para coleta de métricas, seguindo o padrão aberto da Cloud Native Computing Foundation (CNCF). As métricas são exportadas no formato Prometheus por meio de um endpoint \texttt{/metrics}, permitindo o monitoramento do serviço por ferramentas de observabilidade padrão do ecossistema nativo de nuvem. As métricas instrumentadas incluem a duração do processamento de eventos de sincronização (histograma \texttt{event\_processing\_duration\_seconds}) e a contagem total de eventos processados (\texttt{event\_processing\_total}), ambas segmentadas por tipo de projeção e status de execução.
+    \item \textbf{OpenTelemetry + Prometheus}~\citep{opentelemetry2024, prometheus2024}: O serviço utiliza o OpenTelemetry como framework de instrumentação para coleta de métricas, seguindo o padrão aberto da Cloud Native Computing Foundation (CNCF). As métricas são exportadas no formato Prometheus por meio de um endpoint \texttt{/metrics}, permitindo o monitoramento do serviço por ferramentas de observabilidade padrão do ecossistema nativo de nuvem. As métricas instrumentadas incluem a duração do processamento de eventos de sincronização (histograma \texttt{event\_processing\_duration\_seconds}) e a contagem total de eventos processados (\texttt{event\_processing\_total}), ambas segmentadas por tipo de projeção e status de execução.
 \end{itemize}
 
 \subsection{Consenso Distribuído via RAFT}
 \label{subsec_raft}
 
-A arquitetura de nó único apresenta um ponto único de falha (\textit{Single Point of Failure}, SPOF): caso o nó que executa o serviço de metadados fique indisponível, todas as instâncias perdem acesso às suas configurações de inicialização, o que inviabiliza reinicializações e provisionamentos durante o período de falha. Para possibilitar implantações de alta disponibilidade em ambientes de produção, o serviço implementa consenso distribuído por meio do protocolo RAFT \cite{ongaro2014raft}, utilizando a biblioteca \texttt{hashicorp/raft}.
+A arquitetura de nó único apresenta um ponto único de falha (\textit{Single Point of Failure}, SPOF): caso o nó que executa o serviço de metadados fique indisponível, todas as instâncias perdem acesso às suas configurações de inicialização, o que inviabiliza reinicializações e provisionamentos durante o período de falha. Para possibilitar implantações de alta disponibilidade em ambientes de produção, o serviço implementa consenso distribuído por meio do protocolo RAFT \citep{ongaro2014raft}, utilizando a biblioteca \texttt{hashicorp/raft}.
 
 O suporte a RAFT é ativado de forma opcional por meio de variáveis de ambiente, sendo \texttt{RAFT\_ENABLED=true} o ponto de entrada. Quando habilitado, o nó é configurado com os parâmetros definidos nas variáveis \texttt{NODE\_ID}, \texttt{BIND\_ADDR}, \texttt{DATA\_DIR}, \texttt{PEERS} e \texttt{BOOTSTRAP}, permitindo compor um cluster sem alterações no binário.
 
@@ -173,9 +177,9 @@ O funcionamento do módulo de consenso é organizado em três camadas principais
 \begin{itemize}
     \item \textbf{Eleição de líder}: O protocolo RAFT garante que, a qualquer momento, no máximo um nó detenha o papel de líder. Apenas o nó líder executa o ciclo de sincronização com o Incus e propõe comandos de escrita ao cluster. Os nós seguidores não realizam sincronizações independentes; caso o líder falhe, uma nova eleição é conduzida automaticamente e o nó eleito passa a assumir as responsabilidades de sincronização.
 
-    \item \textbf{Replicação de log e FSM}: Cada operação de escrita (criação de instância, atualização de metadados, persistência de user-data, network-config e estado) é codificada como um comando tipado (\texttt{Command}) e submetida ao log replicado via \texttt{hashicorp/raft}. Após o \textit{commit} do log em uma maioria de nós, a \textit{Finite State Machine} (FSM) aplica o comando ao banco de dados SQLite local de cada nó, mantendo o estado consistente em todo o cluster. Os tipos de comando suportados são: \texttt{CmdCreateInstance}, \texttt{CmdUpdateInstance}, \texttt{CmdCreateOrUpdateMetadata}, \texttt{CmdCreateOrUpdateUserData}, \texttt{CmdCreateOrUpdateVendorData}, \texttt{CmdCreateOrUpdateNetworkConfig} e \texttt{CmdCreateOrUpdateState}.
+    \item \textbf{Replicação de log e FSM}: Cada operação de escrita (criação, atualização e remoção de instância; persistência de metadados, user-data, vendor-data, network-config e estado) é codificada como um comando tipado (\texttt{Command}) e submetida ao log replicado via \texttt{hashicorp/raft}. Após o \textit{commit} do log em uma maioria de nós, a \textit{Finite State Machine} (FSM) aplica o comando ao banco de dados SQLite local de cada nó, mantendo o estado consistente em todo o cluster. Os tipos de comando suportados são: \texttt{CmdCreateInstance}, \texttt{CmdUpdateInstance}, \texttt{CmdCreateOrUpdateMetadata}, \texttt{CmdCreateOrUpdateUserData}, \texttt{CmdCreateOrUpdateNetworkConfig}, \texttt{CmdCreateOrUpdateState}, \texttt{CmdCreateOrUpdateVendorData} e \texttt{CmdDeleteInstance}, este último utilizado pela rotina de reconciliação que remove registros de instâncias não mais presentes no Incus.
 
     \item \textbf{Armazenamento persistente}: O log de entradas RAFT e o estado estável do nó são persistidos em um arquivo BoltDB localizado no diretório configurado por \texttt{DATA\_DIR}. Essa escolha elimina a necessidade de um processo de banco de dados externo para o próprio mecanismo de consenso, mantendo o requisito de implantação simplificada.
 \end{itemize}
 
-Todos os nós do cluster, tanto o líder quanto os seguidores, podem responder a requisições de leitura, uma vez que cada um mantém uma cópia local e atualizada do estado no SQLite. Isso permite distribuir a carga de consultas de metadados entre os nós sem comprometer a consistência das leituras para as instâncias.
+Todos os nós do cluster, tanto o líder quanto os seguidores, podem responder a requisições de leitura, uma vez que cada um mantém uma cópia local do estado no SQLite. Essas leituras são eventualmente consistentes: um seguidor pode estar defasado em relação ao líder pelo intervalo entre o \textit{commit} de uma entrada no \textit{log} e sua aplicação local pela FSM. Como as escritas ocorrem apenas no ciclo de sincronização periódica, essa janela é aceitável para o perfil do serviço e permite distribuir a carga de consultas de metadados entre os nós.

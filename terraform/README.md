@@ -41,6 +41,11 @@ cd /opt/mds && ./scripts/run-experiments.sh all
 ## Cost & teardown
 
 `e2-standard-4` is ~$0.13/hr; a full experiment round is a couple of hours.
+The 250 GB boot disk (needed by the 200-container sweep with the `dir` pool)
+adds ~$0.03/hr.
+
+To check whether cloud-init actually consumes `/network-config`, run on the host:
+`cd /opt/mds && sudo OUTDIR=results/<ts> ./scripts/validate-network-config.sh`.
 **Destroy when done** so it stops billing:
 
 ```bash

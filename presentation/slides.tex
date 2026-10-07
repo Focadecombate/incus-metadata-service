@@ -124,8 +124,8 @@
         }
     \end{table}
     \vspace{0.3cm}
-    \textbf{Lacuna:} não há serviço de metadados leve e autônomo que implemente o
-    protocolo HTTP esperado pelo cloud-init para o Incus.
+    \textbf{Lacuna:} na revisão realizada, não foi identificado serviço de metadados
+    leve e autônomo que implemente o protocolo HTTP esperado pelo cloud-init para o Incus.
 \end{frame}
 
 % =====================================================================
@@ -315,7 +315,7 @@
             \textbf{Propriedade} & \textbf{Resultado} \\
             \midrule
             Isolamento de metadados & Aprovado \\
-            Isolamento sob falsificação de IP (\texttt{X-Forwarded-For}) & Aprovado \\
+            Isolamento sob manipulação do cabeçalho \texttt{X-Forwarded-For} & Aprovado \\
             Execução de \textit{user-data} & Aprovado \\
             Entrega de \textit{network-config} & Aprovado (conteúdo servido) \\
             Propagação de estado após reinício & Aprovado \\
@@ -370,9 +370,10 @@
     \vspace{0.3cm}
     \begin{itemize}
         \item Hipótese inicial: degradação por serialização de escrita do SQLite.
-        \item \textbf{Não corroborada} até 200 instâncias: latência estável e zero
-              erros; carga dominada por leituras, e escritas a cada 10~s absorvidas
-              pelo modo WAL e pelo \textit{busy timeout}.
+        \item \textbf{Não corroborada} até 200 contêineres de sistema em host único:
+              latência estável e zero erros; carga dominada por leituras, e escritas
+              a cada 10~s absorvidas pelo modo WAL e pelo \textit{busy timeout}.
+              Uma execução por configuração (valores indicativos).
     \end{itemize}
 \end{frame}
 
@@ -431,9 +432,10 @@
               lacuna de um endpoint HTTP autônomo em infraestrutura privada.
         \item Identificação por IP de origem: sem agentes nas instâncias; a única
               configuração é o \texttt{seedfrom} na imagem-base.
-        \item Validado em ambiente real: \textit{boots} completos com sucesso,
-              latências de dezenas de milissegundos, escalabilidade estável até 200
-              instâncias e reeleição de líder em $\approx$~2{,}4~s.
+        \item Validado em ambiente real (contêineres de sistema, host único):
+              \textit{boots} completos com sucesso, latências de dezenas de
+              milissegundos, latência estável até 200 contêineres e reeleição de
+              líder em 2{,}40~s (execução única).
         \item Código aberto, binário único, implantação simples, adequado a
               \textit{homelabs}, borda e nuvens privadas de pequena escala.
     \end{itemize}

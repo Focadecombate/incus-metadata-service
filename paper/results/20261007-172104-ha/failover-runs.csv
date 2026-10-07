@@ -1,0 +1,11 @@
+run,old_leader,new_leader,reelection_s,poll_ms,status
+1,node1,node3,2.287,50,OK
+2,node3,node2,1.913,50,OK
+3,node2,node1,1.785,50,OK
+4,node1,node2,2.362,50,OK
+5,node2,node1,2.309,50,OK
+6,node1,node2,1.463,50,OK
+7,node2,node1,1.599,50,OK
+8,node1,node3,2.172,50,OK
+9,node3,node2,2.654,50,OK
+10,node2,node3,1.840,50,OK

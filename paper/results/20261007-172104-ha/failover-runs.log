@@ -1,0 +1,82 @@
+[17:21:04] == Installing poller on all nodes ==
+[17:22:06] == Run 1/10 ==
+[17:22:30] leader=node1 poller=node2 survivors=node2 node3
+[17:22:42] SIGKILL metadata-service on node1
+--- run 1 ---
+ready
+status=OK old_leader=10.20.0.11 new_leader=10.20.0.13 t_down=1791393769.245099734 t_elected=1791393771.532064292 reelection_s=2.287 poll_ms=50
+DONE
+[17:22:55] run 1: node1 -> node3 in 2.287 s (OK)
+[17:23:15] == Run 2/10 ==
+[17:23:55] leader=node3 poller=node1 survivors=node1 node2
+[17:24:09] SIGKILL metadata-service on node3
+--- run 2 ---
+ready
+status=OK old_leader=10.20.0.13 new_leader=10.20.0.12 t_down=1791393855.818435825 t_elected=1791393857.731688117 reelection_s=1.913 poll_ms=50
+DONE
+[17:24:22] run 2: node3 -> node2 in 1.913 s (OK)
+[17:24:42] == Run 3/10 ==
+[17:25:14] leader=node2 poller=node1 survivors=node1 node3
+[17:25:27] SIGKILL metadata-service on node2
+--- run 3 ---
+ready
+status=OK old_leader=10.20.0.12 new_leader=10.20.0.11 t_down=1791393933.495131532 t_elected=1791393935.279688831 reelection_s=1.785 poll_ms=50
+DONE
+[17:25:40] run 3: node2 -> node1 in 1.785 s (OK)
+[17:26:00] == Run 4/10 ==
+[17:26:29] leader=node1 poller=node2 survivors=node2 node3
+[17:26:42] SIGKILL metadata-service on node1
+--- run 4 ---
+ready
+status=OK old_leader=10.20.0.11 new_leader=10.20.0.12 t_down=1791394009.297512650 t_elected=1791394011.659303433 reelection_s=2.362 poll_ms=50
+DONE
+[17:26:55] run 4: node1 -> node2 in 2.362 s (OK)
+[17:27:15] == Run 5/10 ==
+[17:27:51] leader=node2 poller=node1 survivors=node1 node3
+[17:28:03] SIGKILL metadata-service on node2
+--- run 5 ---
+ready
+status=OK old_leader=10.20.0.12 new_leader=10.20.0.11 t_down=1791394089.888384474 t_elected=1791394092.197578504 reelection_s=2.309 poll_ms=50
+DONE
+[17:28:16] run 5: node2 -> node1 in 2.309 s (OK)
+[17:28:36] == Run 6/10 ==
+[17:29:03] leader=node1 poller=node2 survivors=node2 node3
+[17:29:16] SIGKILL metadata-service on node1
+--- run 6 ---
+ready
+status=OK old_leader=10.20.0.11 new_leader=10.20.0.12 t_down=1791394162.538917488 t_elected=1791394164.001934460 reelection_s=1.463 poll_ms=50
+DONE
+[17:29:29] run 6: node1 -> node2 in 1.463 s (OK)
+[17:29:49] == Run 7/10 ==
+[17:30:23] leader=node2 poller=node1 survivors=node1 node3
+[17:30:35] SIGKILL metadata-service on node2
+--- run 7 ---
+ready
+status=OK old_leader=10.20.0.12 new_leader=10.20.0.11 t_down=1791394241.870930728 t_elected=1791394243.469479058 reelection_s=1.599 poll_ms=50
+DONE
+[17:30:48] run 7: node2 -> node1 in 1.599 s (OK)
+[17:31:08] == Run 8/10 ==
+[17:31:35] leader=node1 poller=node2 survivors=node2 node3
+[17:31:47] SIGKILL metadata-service on node1
+--- run 8 ---
+ready
+status=OK old_leader=10.20.0.11 new_leader=10.20.0.13 t_down=1791394314.119025498 t_elected=1791394316.291217896 reelection_s=2.172 poll_ms=50
+DONE
+[17:32:00] run 8: node1 -> node3 in 2.172 s (OK)
+[17:32:20] == Run 9/10 ==
+[17:32:59] leader=node3 poller=node1 survivors=node1 node2
+[17:33:12] SIGKILL metadata-service on node3
+--- run 9 ---
+ready
+status=OK old_leader=10.20.0.13 new_leader=10.20.0.12 t_down=1791394398.311543020 t_elected=1791394400.965801616 reelection_s=2.654 poll_ms=50
+DONE
+[17:33:25] run 9: node3 -> node2 in 2.654 s (OK)
+[17:33:45] == Run 10/10 ==
+[17:34:20] leader=node2 poller=node1 survivors=node1 node3
+[17:34:33] SIGKILL metadata-service on node2
+--- run 10 ---
+ready
+status=OK old_leader=10.20.0.12 new_leader=10.20.0.13 t_down=1791394479.268901919 t_elected=1791394481.108509177 reelection_s=1.840 poll_ms=50
+DONE
+[17:34:45] run 10: node2 -> node3 in 1.840 s (OK)
+[17:35:05] == Done. Results: ../paper/results/20261007-172104-ha/failover-runs.csv ==

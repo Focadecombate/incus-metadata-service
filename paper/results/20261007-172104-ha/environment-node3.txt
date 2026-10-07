@@ -1,0 +1,24 @@
+# Captured 2026-10-07T17:51:32Z node3 (e2-standard-2, us-central1-a)
+## service commit
+built metadata-service from 098f792
+## go
+go version go1.22.2 linux/amd64
+## incus
+Client version: 6.0.0
+Server version: unreachable
+## kernel
+7.0.0-1011-gcp
+## cpu
+2
+## memory
+               total        used        free      shared  buff/cache   available
+Mem:            7934         650        5576           0        2015        7283
+## raft env
+RAFT_ENABLED=true
+RAFT_NODE_ID=node3
+RAFT_BIND_ADDR=10.20.0.13:7000
+RAFT_PEERS=node1=10.20.0.11:7000,node2=10.20.0.12:7000
+RAFT_BOOTSTRAP=false
+RAFT_DATA_DIR=/var/lib/mds/raft
+## raft status
+{"is_leader":true,"leader_addr":"10.20.0.13:7000","state":"Leader"}

@@ -105,3 +105,32 @@ data stays available across a failover and the reconciliation is correct. State 
 topology in the paper. The per-host/edge alternative would need source-scoped
 reconciliation; the `source_node` column now records ownership as groundwork for it.
 Consensus itself (formation, replication, 2.4 s re-election, rejoin) is sound.
+
+## HA — Repeated leader-kill re-election (→ 04_resultados.tex, tab:ha) — run `20261007-172104-ha`
+
+Cluster re-provisioned with `terraform-ha/` (3 × e2-standard-2, service commit
+`098f792`, kernel 7.0.0-1011-gcp, per-node Incus). Ten repetitions via
+`terraform-ha/failover-repeat.sh`: the current leader's process is SIGKILLed and
+a survivor node runs `failover-poller.sh`, polling the leader's `/raft/status`
+over the internal network every 50 ms; re-election time = first failed leader
+poll → first survivor reporting `Leader`. Raw: `failover-runs.csv`,
+`failover-runs.log`, `environment-node{1,2,3}.txt`.
+
+| run | old → new leader | re-election (s) |
+|---|---|---|
+| 1 | node1 → node3 | 2.287 |
+| 2 | node3 → node2 | 1.913 |
+| 3 | node2 → node1 | 1.785 |
+| 4 | node1 → node2 | 2.362 |
+| 5 | node2 → node1 | 2.309 |
+| 6 | node1 → node2 | 1.463 |
+| 7 | node2 → node1 | 1.599 |
+| 8 | node1 → node3 | 2.172 |
+| 9 | node3 → node2 | 2.654 |
+| 10 | node2 → node3 | 1.840 |
+
+**n = 10, mean 2.04 s, median 2.04 s, min 1.46 s, max 2.65 s, sd 0.38 s.**
+Consistent with the original single run (2.40 s) and with the 1 s heartbeat +
+1 s randomized election timeout. Only re-election time was measured in these
+runs; data availability after failover was verified in the original shared-Incus
+run above.

@@ -29,9 +29,9 @@
 \citation{mitre_t1552_005}
 \citation{aws_imdsv2}
 \citation{aws_imdsv2_blog}
-\citation{gcp_metadata}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Datasource NoCloud}{4}{subsection.2.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.3}AWS Instance Metadata Service (IMDS)}{4}{subsection.2.3}\protected@file@percent }
+\citation{gcp_metadata}
 \citation{gcp_metadata}
 \citation{azure_imds}
 \citation{aws_imdsv2_blog}
@@ -109,37 +109,37 @@
 \newlabel{subsec_metodologia}{{4.1}{15}{Metodologia de Avaliação}{subsection.4.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Avaliação Funcional}{16}{subsection.4.2}\protected@file@percent }
 \newlabel{subsec_avaliacao_funcional}{{4.2}{16}{Avaliação Funcional}{subsection.4.2}{}}
-\citation{sqlite2024}
 \@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Resultados dos testes funcionais.}}{17}{table.2}\protected@file@percent }
 \newlabel{tab:funcional}{{2}{17}{Resultados dos testes funcionais}{table.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Avaliação de Desempenho}{17}{subsection.4.3}\protected@file@percent }
 \newlabel{subsec_avaliacao_desempenho}{{4.3}{17}{Avaliação de Desempenho}{subsection.4.3}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.1}Latência de Resposta da API}{17}{subsubsection.4.3.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Latência de resposta por \textit  {endpoint} (5000 requisições, concorrência 50).}}{17}{table.3}\protected@file@percent }
-\newlabel{tab:latencia}{{3}{17}{Latência de resposta por \textit {endpoint} (5000 requisições, concorrência 50)}{table.3}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.2}Latência de Sincronização}{17}{subsubsection.4.3.2}\protected@file@percent }
+\citation{sqlite2024}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Latência de resposta por \textit  {endpoint} (5000 requisições, concorrência 50).}}{18}{table.3}\protected@file@percent }
+\newlabel{tab:latencia}{{3}{18}{Latência de resposta por \textit {endpoint} (5000 requisições, concorrência 50)}{table.3}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.2}Latência de Sincronização}{18}{subsubsection.4.3.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.3}Escalabilidade}{18}{subsubsection.4.3.3}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Escalabilidade: latência de \texttt  {/meta-data} e memória utilizada no host por número de contêineres em execução.}}{18}{table.4}\protected@file@percent }
 \newlabel{tab:escalabilidade}{{4}{18}{Escalabilidade: latência de \texttt {/meta-data} e memória utilizada no host por número de contêineres em execução}{table.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Escalabilidade em host único com contêineres de sistema: (a) latência de \texttt  {/meta-data} nos percentis p50, p95 e p99 e (b) memória utilizada no host, por número de contêineres em execução. Uma execução de 5000 requisições (concorrência 50) por configuração; valores indicativos.}}{18}{figure.2}\protected@file@percent }
-\newlabel{fig:escalabilidade}{{2}{18}{Escalabilidade em host único com contêineres de sistema: (a) latência de \texttt {/meta-data} nos percentis p50, p95 e p99 e (b) memória utilizada no host, por número de contêineres em execução. Uma execução de 5000 requisições (concorrência 50) por configuração; valores indicativos}{figure.2}{}}
-\citation{aws_imds}
-\citation{gcp_metadata}
-\citation{openstack_metadata}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Escalabilidade em host único com contêineres de sistema: (a) latência de \texttt  {/meta-data} nos percentis p50, p95 e p99 e (b) memória utilizada no host, por número de contêineres em execução. Uma execução de 5000 requisições (concorrência 50) por configuração; valores indicativos.}}{19}{figure.2}\protected@file@percent }
+\newlabel{fig:escalabilidade}{{2}{19}{Escalabilidade em host único com contêineres de sistema: (a) latência de \texttt {/meta-data} nos percentis p50, p95 e p99 e (b) memória utilizada no host, por número de contêineres em execução. Uma execução de 5000 requisições (concorrência 50) por configuração; valores indicativos}{figure.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Avaliação de Alta Disponibilidade}{19}{subsection.4.4}\protected@file@percent }
 \newlabel{subsec_avaliacao_ha}{{4.4}{19}{Avaliação de Alta Disponibilidade}{subsection.4.4}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Resultados da avaliação de alta disponibilidade (\textit  {cluster} de 3 nós).}}{19}{table.5}\protected@file@percent }
 \newlabel{tab:ha}{{5}{19}{Resultados da avaliação de alta disponibilidade (\textit {cluster} de 3 nós)}{table.5}{}}
-\citation{cloudinit2024}
+\citation{aws_imds}
+\citation{gcp_metadata}
+\citation{openstack_metadata}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Comparação com Provedores de Nuvem}{20}{subsection.4.5}\protected@file@percent }
 \newlabel{subsec_comparacao}{{4.5}{20}{Comparação com Provedores de Nuvem}{subsection.4.5}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Comparação de campos de metadados ({\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 51} suportado; {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 55} não suportado; P: parcial).}}{20}{table.6}\protected@file@percent }
 \newlabel{tab:comparacao_campos}{{6}{20}{Comparação de campos de metadados (\ding {51} suportado; \ding {55} não suportado; P: parcial)}{table.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Discussão}{20}{subsection.4.6}\protected@file@percent }
-\newlabel{subsec_discussao}{{4.6}{20}{Discussão}{subsection.4.6}{}}
+\citation{cloudinit2024}
 \citation{aws_imds,gcp_metadata}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusão}{21}{section.5}\protected@file@percent }
-\newlabel{sec_conclusao}{{5}{21}{Conclusão}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Discussão}{21}{subsection.4.6}\protected@file@percent }
+\newlabel{subsec_discussao}{{4.6}{21}{Discussão}{subsection.4.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusão}{22}{section.5}\protected@file@percent }
+\newlabel{sec_conclusao}{{5}{22}{Conclusão}{section.5}{}}
 \citation{aws_imdsv2}
 \citation{mitre_t1552_005}
 \bibstyle{apalike}

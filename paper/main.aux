@@ -32,7 +32,6 @@
 \citation{gcp_metadata}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Datasource NoCloud}{4}{subsection.2.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.3}AWS Instance Metadata Service (IMDS)}{4}{subsection.2.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}GCP Metadata Server}{4}{subsection.2.4}\protected@file@percent }
 \citation{gcp_metadata}
 \citation{azure_imds}
 \citation{aws_imdsv2_blog}
@@ -44,8 +43,8 @@
 \citation{stgraber2023}
 \citation{lxd2024}
 \citation{incus_announcement}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}GCP Metadata Server}{5}{subsection.2.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.5}OpenStack Metadata Service}{5}{subsection.2.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Incus/LXD e a Lacuna de Metadados}{5}{subsection.2.6}\protected@file@percent }
 \citation{incus2024}
 \citation{cloudinit_lxd_ds}
 \citation{incus2024}
@@ -54,6 +53,7 @@
 \citation{cloudinit_nocloud}
 \citation{cloudinit_ec2_ds}
 \citation{ongaro2014raft}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Incus/LXD e a Lacuna de Metadados}{6}{subsection.2.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.7}Algoritmo de Consenso RAFT}{6}{subsection.2.7}\protected@file@percent }
 \citation{hashicorp_raft}
 \citation{mitre_t1552_005}
@@ -62,16 +62,16 @@
 \citation{gcp_metadata}
 \citation{azure_imds}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.8}Segurança em Serviços de Metadados}{7}{subsection.2.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.9}Comparação entre as Abordagens}{7}{subsection.2.9}\protected@file@percent }
 \citation{cloudinit_lxd_ds}
 \citation{bresnahan2011managing}
 \citation{guerriero2019iac,artac2017iac}
 \citation{teppan2022survey}
-\citation{ongaro2014raft}
-\citation{hashicorp_raft}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.9}Comparação entre as Abordagens}{8}{subsection.2.9}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Comparação entre serviços de metadados para cloud-init.}}{8}{table.1}\protected@file@percent }
 \newlabel{tab:comparacao}{{1}{8}{Comparação entre serviços de metadados para cloud-init}{table.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.10}Considerações Finais}{8}{subsection.2.10}\protected@file@percent }
+\citation{ongaro2014raft}
+\citation{hashicorp_raft}
 \citation{incus2024}
 \citation{cloudinit2024}
 \citation{gin2024}
@@ -86,20 +86,20 @@
 \newlabel{subsec_sincronizacao}{{3.2}{10}{Sincronização de Instâncias}{subsection.3.2}{}}
 \citation{cloudinit_netv2}
 \citation{cloudinit_nocloud}
-\citation{cloudinit_netv2}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Endpoints da API}{11}{subsection.3.3}\protected@file@percent }
 \newlabel{subsec_endpoints}{{3.3}{11}{Endpoints da API}{subsection.3.3}{}}
+\citation{cloudinit_netv2}
 \citation{cloudinit_nocloud}
 \citation{aws_imds,gcp_metadata}
-\citation{gin2024}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Descoberta do Serviço pelas Instâncias}{12}{subsection.3.4}\protected@file@percent }
 \newlabel{subsec_descoberta}{{3.4}{12}{Descoberta do Serviço pelas Instâncias}{subsection.3.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Tecnologias Utilizadas}{12}{subsection.3.5}\protected@file@percent }
-\newlabel{subsec_tecnologias}{{3.5}{12}{Tecnologias Utilizadas}{subsection.3.5}{}}
+\citation{gin2024}
 \citation{sqlite2024}
 \citation{ongaro2014raft}
 \citation{opentelemetry2024,prometheus2024}
 \citation{ongaro2014raft}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Tecnologias Utilizadas}{13}{subsection.3.5}\protected@file@percent }
+\newlabel{subsec_tecnologias}{{3.5}{13}{Tecnologias Utilizadas}{subsection.3.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Consenso Distribuído via RAFT}{13}{subsection.3.6}\protected@file@percent }
 \newlabel{subsec_raft}{{3.6}{13}{Consenso Distribuído via RAFT}{subsection.3.6}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {4}Resultados}{14}{section.4}\protected@file@percent }
@@ -109,35 +109,37 @@
 \newlabel{subsec_metodologia}{{4.1}{15}{Metodologia de Avaliação}{subsection.4.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Avaliação Funcional}{16}{subsection.4.2}\protected@file@percent }
 \newlabel{subsec_avaliacao_funcional}{{4.2}{16}{Avaliação Funcional}{subsection.4.2}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Resultados dos testes funcionais.}}{16}{table.2}\protected@file@percent }
-\newlabel{tab:funcional}{{2}{16}{Resultados dos testes funcionais}{table.2}{}}
 \citation{sqlite2024}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Resultados dos testes funcionais.}}{17}{table.2}\protected@file@percent }
+\newlabel{tab:funcional}{{2}{17}{Resultados dos testes funcionais}{table.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Avaliação de Desempenho}{17}{subsection.4.3}\protected@file@percent }
 \newlabel{subsec_avaliacao_desempenho}{{4.3}{17}{Avaliação de Desempenho}{subsection.4.3}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.1}Latência de Resposta da API}{17}{subsubsection.4.3.1}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Latência de resposta por \textit  {endpoint} (5000 requisições, concorrência 50).}}{17}{table.3}\protected@file@percent }
 \newlabel{tab:latencia}{{3}{17}{Latência de resposta por \textit {endpoint} (5000 requisições, concorrência 50)}{table.3}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.2}Latência de Sincronização}{17}{subsubsection.4.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.3}Escalabilidade}{17}{subsubsection.4.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.3}Escalabilidade}{18}{subsubsection.4.3.3}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Escalabilidade: latência de \texttt  {/meta-data} e memória utilizada no host por número de contêineres em execução.}}{18}{table.4}\protected@file@percent }
 \newlabel{tab:escalabilidade}{{4}{18}{Escalabilidade: latência de \texttt {/meta-data} e memória utilizada no host por número de contêineres em execução}{table.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Avaliação de Alta Disponibilidade}{18}{subsection.4.4}\protected@file@percent }
-\newlabel{subsec_avaliacao_ha}{{4.4}{18}{Avaliação de Alta Disponibilidade}{subsection.4.4}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Resultados da avaliação de alta disponibilidade (\textit  {cluster} de 3 nós).}}{18}{table.5}\protected@file@percent }
-\newlabel{tab:ha}{{5}{18}{Resultados da avaliação de alta disponibilidade (\textit {cluster} de 3 nós)}{table.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Escalabilidade em host único com contêineres de sistema: (a) latência de \texttt  {/meta-data} nos percentis p50, p95 e p99 e (b) memória utilizada no host, por número de contêineres em execução. Uma execução de 5000 requisições (concorrência 50) por configuração; valores indicativos.}}{18}{figure.2}\protected@file@percent }
+\newlabel{fig:escalabilidade}{{2}{18}{Escalabilidade em host único com contêineres de sistema: (a) latência de \texttt {/meta-data} nos percentis p50, p95 e p99 e (b) memória utilizada no host, por número de contêineres em execução. Uma execução de 5000 requisições (concorrência 50) por configuração; valores indicativos}{figure.2}{}}
 \citation{aws_imds}
 \citation{gcp_metadata}
 \citation{openstack_metadata}
-\citation{cloudinit2024}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Avaliação de Alta Disponibilidade}{19}{subsection.4.4}\protected@file@percent }
+\newlabel{subsec_avaliacao_ha}{{4.4}{19}{Avaliação de Alta Disponibilidade}{subsection.4.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Resultados da avaliação de alta disponibilidade (\textit  {cluster} de 3 nós).}}{19}{table.5}\protected@file@percent }
+\newlabel{tab:ha}{{5}{19}{Resultados da avaliação de alta disponibilidade (\textit {cluster} de 3 nós)}{table.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Comparação com Provedores de Nuvem}{19}{subsection.4.5}\protected@file@percent }
 \newlabel{subsec_comparacao}{{4.5}{19}{Comparação com Provedores de Nuvem}{subsection.4.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Comparação de campos de metadados ({\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 51} suportado; {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 55} não suportado; P: parcial).}}{19}{table.6}\protected@file@percent }
-\newlabel{tab:comparacao_campos}{{6}{19}{Comparação de campos de metadados (\ding {51} suportado; \ding {55} não suportado; P: parcial)}{table.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Discussão}{19}{subsection.4.6}\protected@file@percent }
-\newlabel{subsec_discussao}{{4.6}{19}{Discussão}{subsection.4.6}{}}
+\citation{cloudinit2024}
 \citation{aws_imds,gcp_metadata}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusão}{20}{section.5}\protected@file@percent }
-\newlabel{sec_conclusao}{{5}{20}{Conclusão}{section.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Comparação de campos de metadados ({\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 51} suportado; {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 55} não suportado; P: parcial).}}{20}{table.6}\protected@file@percent }
+\newlabel{tab:comparacao_campos}{{6}{20}{Comparação de campos de metadados (\ding {51} suportado; \ding {55} não suportado; P: parcial)}{table.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Discussão}{20}{subsection.4.6}\protected@file@percent }
+\newlabel{subsec_discussao}{{4.6}{20}{Discussão}{subsection.4.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusão}{21}{section.5}\protected@file@percent }
+\newlabel{sec_conclusao}{{5}{21}{Conclusão}{section.5}{}}
 \citation{aws_imdsv2}
 \citation{mitre_t1552_005}
 \bibstyle{apalike}
@@ -175,4 +177,4 @@
 \bibcite{shi2016}{{31}{2016}{{Shi et~al.}}{{}}}
 \bibcite{sousa2018computacao}{{32}{2018}{{Sousa}}{{}}}
 \bibcite{teppan2022survey}{{33}{2022}{{Teppan et~al.}}{{}}}
-\gdef \@abspage@last{22}
+\gdef \@abspage@last{23}

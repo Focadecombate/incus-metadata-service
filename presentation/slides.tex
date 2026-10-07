@@ -386,7 +386,7 @@
             \midrule
             Formação do \textit{cluster} & 1 líder + 2 seguidores \\
             Replicação de estado & instância presente nos 3 nós \\
-            Reeleição após falha do líder & \textbf{2{,}40~s} (uma execução) \\
+            Reeleição após falha do líder & \textbf{2{,}04~s} em média (10 execuções; 1{,}46 a 2{,}65~s) \\
             Disponibilidade após \textit{failover} & preservada \\
             Reintegração de nó & reingressa como seguidor \\
             \bottomrule
@@ -418,7 +418,7 @@
         \item \textbf{Ameaças à validade}: host único nos testes de desempenho;
               contêineres de sistema (não VMs completas); janela de inconsistência do
               \textit{polling}; \texttt{network-config} servido mas não aplicado;
-              sincronização e reeleição medidas em execução única.
+              sincronização medida em execução única; reeleição em 10 repetições.
     \end{itemize}
 \end{frame}
 
@@ -435,7 +435,7 @@
         \item Validado em ambiente real (contêineres de sistema, host único):
               \textit{boots} completos com sucesso, latências de dezenas de
               milissegundos, latência estável até 200 contêineres e reeleição de
-              líder em 2{,}40~s (execução única).
+              líder em 2{,}04~s em média (10 execuções).
         \item Código aberto, binário único, implantação simples, adequado a
               \textit{homelabs}, borda e nuvens privadas de pequena escala.
     \end{itemize}

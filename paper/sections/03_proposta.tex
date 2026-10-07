@@ -116,7 +116,7 @@ Para que o serviço consiga responder corretamente às requisições das instân
     \end{itemize}
 \end{enumerate}
 
-Esse modelo orientado a eventos garante que o estado armazenado permaneça consistente com o estado real das instâncias no Incus, sem impor acoplamento direto entre o agendamento e a lógica de sincronização.
+Esse modelo orientado a eventos mantém o estado armazenado consistente com o estado real das instâncias no Incus, dentro da janela do ciclo de sincronização, sem impor acoplamento direto entre o agendamento e a lógica de sincronização.
 
 \subsection{Endpoints da API}
 \label{subsec_endpoints}

@@ -4,18 +4,17 @@
 # ///
 """Gera paper/figures/escalabilidade.pdf a partir dos dados de escalabilidade.
 
-Fonte dos dados: a tabela "S - Scalability 5->200" de paper/results/RESULTS.md,
-que é a origem da Tabela tab:escalabilidade do artigo. O CSV bruto commitado
-(20260711-235653/scalability/scalability.csv) cobre apenas a primeira varredura
-(5 a 50 instâncias); a varredura estendida (50 a 200) está registrada somente em
-RESULTS.md. Cada ponto é uma única execução de 5000 requisições (concorrência 50).
+Fonte dos dados: o CSV bruto da varredura de 5 a 200 contêineres
+(20261007-211639/scalability/scalability.csv, gerado por scripts/run-experiments.sh S),
+que é a origem da Tabela tab:escalabilidade do artigo. Cada ponto é uma única
+execução de 5000 requisições (concorrência 50).
 
 Uso: uv run paper/results/plot-escalabilidade.py
 """
 
 from __future__ import annotations
 
-import re
+import csv
 from pathlib import Path
 
 import matplotlib
@@ -24,33 +23,28 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent
-RESULTS_MD = HERE / "RESULTS.md"
+CSV = HERE / "20261007-211639" / "scalability" / "scalability.csv"
 OUT = HERE.parent / "figures" / "escalabilidade.pdf"
 
 XTICKS = [5, 50, 100, 150, 200]
 
-ROW = re.compile(
-    r"^\|\s*(\d+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)%\s*\|\s*(\d+)\s*\|"
-)
-
 
 def load_rows() -> list[tuple[int, float, float, float, float, int]]:
     rows = []
-    in_section = False
-    for line in RESULTS_MD.read_text(encoding="utf-8").splitlines():
-        if line.startswith("## "):
-            in_section = line.startswith("## S ")
-            continue
-        if not in_section:
-            continue
-        m = ROW.match(line)
-        if m:
-            n, p50, p95, p99, err, mem = m.groups()
+    with CSV.open(encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
             rows.append(
-                (int(n), float(p50), float(p95), float(p99), float(err), int(mem))
+                (
+                    int(r["n_instances"]),
+                    float(r["p50_ms"]),
+                    float(r["p95_ms"]),
+                    float(r["p99_ms"]),
+                    float(r["err_pct"]),
+                    int(r["mem_used_mb"]),
+                )
             )
     if not rows:
-        raise SystemExit(f"nenhuma linha de escalabilidade encontrada em {RESULTS_MD}")
+        raise SystemExit(f"nenhuma linha de escalabilidade encontrada em {CSV}")
     return sorted(rows)
 
 
@@ -104,7 +98,7 @@ def main() -> None:
         )
     ax_lat.set_xlabel("Contêineres em execução")
     ax_lat.set_ylabel("Latência de /meta-data (ms)")
-    ax_lat.set_ylim(0, 100)
+    ax_lat.set_ylim(0, 140)
     ax_lat.set_xlim(0, 230)
     ax_lat.set_xticks(XTICKS)
     ax_lat.grid(axis="y", color="#dddddd", linewidth=0.6)
@@ -123,7 +117,7 @@ def main() -> None:
     )
     ax_mem.set_xlabel("Contêineres em execução")
     ax_mem.set_ylabel("Memória utilizada no host (MB)")
-    ax_mem.set_ylim(0, 2000)
+    ax_mem.set_ylim(0, 6000)
     ax_mem.set_xlim(0, 230)
     ax_mem.set_xticks(XTICKS)
     ax_mem.grid(axis="y", color="#dddddd", linewidth=0.6)

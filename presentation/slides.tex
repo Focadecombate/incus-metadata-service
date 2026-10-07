@@ -302,7 +302,8 @@
               usado pelo provedor; o \textit{datasource} foi apontado para o
               \textit{gateway} da \textit{bridge} (\texttt{10.10.10.1:8080}).
         \item A imagem-base desabilita a rede do cloud-init (\texttt{eth0} por DHCP
-              via Netplan): \texttt{network-config} foi servido, não aplicado.
+              via Netplan). Experimento complementar com a rede habilitada: o NoCloud
+              (cloud-init 26.1) não requisita \texttt{network-config} via HTTP.
     \end{itemize}
 \end{frame}
 
@@ -317,7 +318,7 @@
             Isolamento de metadados & Aprovado \\
             Isolamento sob manipulação do cabeçalho \texttt{X-Forwarded-For} & Aprovado \\
             Execução de \textit{user-data} & Aprovado \\
-            Entrega de \textit{network-config} & Aprovado (conteúdo servido) \\
+            Entrega de \textit{network-config} & Servido; não consultado via HTTP \\
             Propagação de estado após reinício & Aprovado \\
             \bottomrule
         \end{tabular}
@@ -359,11 +360,12 @@
             \toprule
             \textbf{Instâncias} & \textbf{p50 (ms)} & \textbf{p95 (ms)} & \textbf{p99 (ms)} & \textbf{Erros} & \textbf{Mem. host (MB)} \\
             \midrule
-            5   & 16{,}2 & 60{,}3 & 92{,}4 & 0{,}0\% & 1152 \\
-            25  & 12{,}4 & 51{,}8 & 77{,}2 & 0{,}0\% & 1373 \\
-            50  & 12{,}9 & 52{,}0 & 80{,}8 & 0{,}0\% & 1733 \\
-            100 & 14{,}4 & 58{,}6 & 92{,}1 & 0{,}0\% & 1763 \\
-            200 & 12{,}8 & 54{,}2 & 87{,}2 & 0{,}0\% & 1711 \\
+            5   & 19{,}3 & 77{,}7 & 117{,}4 & 0{,}0\% & 1216 \\
+            25  & 12{,}7 & 52{,}5 & 78{,}5  & 0{,}0\% & 2053 \\
+            50  & 12{,}6 & 53{,}5 & 78{,}5  & 0{,}0\% & 3147 \\
+            100 & 14{,}3 & 60{,}0 & 94{,}9  & 0{,}0\% & 4715 \\
+            150 & 14{,}9 & 69{,}1 & 124{,}8 & 0{,}0\% & 4909 \\
+            200 & 13{,}2 & 55{,}6 & 85{,}4  & 0{,}0\% & 5171 \\
             \bottomrule
         \end{tabular}
     \end{table}
@@ -371,7 +373,7 @@
     \begin{itemize}
         \item Hipótese inicial: degradação por serialização de escrita do SQLite.
         \item \textbf{Não corroborada} até 200 contêineres de sistema em host único:
-              latência estável e zero erros; carga dominada por leituras, e escritas
+              sem tendência de crescimento da latência e zero erros; carga dominada por leituras, e escritas
               a cada 10~s absorvidas pelo modo WAL e pelo \textit{busy timeout}.
               Uma execução por configuração (valores indicativos).
     \end{itemize}
@@ -417,8 +419,9 @@
         \end{itemize}
         \item \textbf{Ameaças à validade}: host único nos testes de desempenho;
               contêineres de sistema (não VMs completas); janela de inconsistência do
-              \textit{polling}; \texttt{network-config} servido mas não aplicado;
-              sincronização medida em execução única; reeleição em 10 repetições.
+              \textit{polling}; \texttt{network-config} servido, mas não consumido
+              pelo NoCloud via HTTP; sincronização medida em execução única;
+              reeleição em 10 repetições.
     \end{itemize}
 \end{frame}
 
@@ -452,8 +455,9 @@
         \item Substituição do \textit{polling} pela API de eventos do Incus
               (sincronização em tempo real).
         \item \textit{Benchmarks} em maior escala, com repetições para análise estatística.
-        \item Validar a aplicação do \texttt{network-config} com a rede do cloud-init
-              habilitada.
+        \item Levar o \texttt{network-config} a um caminho consumido pelo cloud-init
+              (\textit{datasource} via rede ou \textit{seed} local do Incus) e corrigir
+              o conteúdo gerado (match por nome, gateway, DNS, prefixo IPv6).
     \end{enumerate}
 \end{frame}
 

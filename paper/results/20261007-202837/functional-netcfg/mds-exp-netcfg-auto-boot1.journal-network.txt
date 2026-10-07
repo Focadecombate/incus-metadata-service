@@ -1,0 +1,40 @@
+Oct 07 20:38:43 mds-exp-netseed systemd-networkd[223]: Could not set hostname: Transaction for systemd-hostnamed.service/start is destructive (halt.target has 'start' job queued, but 'stop' is included in transaction).
+Oct 07 20:38:43 mds-exp-netseed systemd-networkd[223]: Could not set hostname: Transaction for systemd-hostnamed.service/start is destructive (shutdown.target has 'start' job queued, but 'stop' is included in transaction).
+Oct 07 20:38:43 mds-exp-netseed systemd-networkd[223]: eth0: DHCPv4 address 10.10.10.221/24, gateway 10.10.10.1 acquired from 10.10.10.1
+Oct 07 20:38:43 mds-exp-netseed systemd-networkd[223]: Could not set hostname: Transaction for systemd-hostnamed.service/start is destructive (systemd-remount-fs.service has 'stop' job queued, but 'start' is included in transaction).
+Oct 07 20:38:45 mds-exp-netseed systemd[1]: Stopping systemd-networkd.service - Network Configuration...
+Oct 07 20:38:45 mds-exp-netseed systemd-networkd[223]: eth0: DHCP lease lost
+Oct 07 20:38:45 mds-exp-netseed systemd-networkd[223]: eth0: DHCPv6 lease lost
+Oct 07 20:38:45 mds-exp-netseed systemd[1]: systemd-networkd.service: Deactivated successfully.
+Oct 07 20:38:45 mds-exp-netseed systemd[1]: Stopped systemd-networkd.service - Network Configuration.
+-- Boot 7041aa1559b14f788445e494c158c361 --
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd[1]: netplan-ovs-cleanup.service - OpenVSwitch configuration for cleanup was skipped because of an unmet condition check (ConditionFileIsExecutable=/usr/bin/ovs-vsctl).
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd[1]: netplan-ovs-cleanup.service - OpenVSwitch configuration for cleanup was skipped because of an unmet condition check (ConditionFileIsExecutable=/usr/bin/ovs-vsctl).
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd[1]: netplan-ovs-cleanup.service - OpenVSwitch configuration for cleanup was skipped because of an unmet condition check (ConditionFileIsExecutable=/usr/bin/ovs-vsctl).
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd[1]: Starting systemd-networkd.service - Network Configuration...
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: Failed to increase receive buffer size for general netlink socket, ignoring: Operation not permitted
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: lo: Link UP
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: lo: Gained carrier
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Link UP
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Gained carrier
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Configuring with /run/systemd/network/10-netplan-zz-bootstrap-dhcp.network.
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Gained IPv6LL
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: Enumeration completed
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd[1]: Started systemd-networkd.service - Network Configuration.
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: DHCPv4 address 10.10.10.102/24, gateway 10.10.10.1 acquired from 10.10.10.1
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: netplan-ovs-cleanup.service - OpenVSwitch configuration for cleanup was skipped because of an unmet condition check (ConditionFileIsExecutable=/usr/bin/ovs-vsctl).
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: Stopping systemd-networkd.service - Network Configuration...
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: systemd-networkd.service: Deactivated successfully.
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: Stopped systemd-networkd.service - Network Configuration.
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: Starting systemd-networkd.service - Network Configuration...
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: Failed to increase receive buffer size for general netlink socket, ignoring: Operation not permitted
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: lo: Link UP
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: lo: Gained carrier
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Link UP
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Gained carrier
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Configuring with /run/systemd/network/10-netplan-eth0.network.
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Gained IPv6LL
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: Enumeration completed
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: Started systemd-networkd.service - Network Configuration.
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: DHCPv4 address 10.10.10.102/24, gateway 10.10.10.1 acquired from 10.10.10.1
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: netplan-ovs-cleanup.service - OpenVSwitch configuration for cleanup was skipped because of an unmet condition check (ConditionFileIsExecutable=/usr/bin/ovs-vsctl).

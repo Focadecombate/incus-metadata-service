@@ -1,0 +1,336 @@
+[21:16:44] Preflight checks
+  PASS Incus reachable, image present, service healthy
+       Environment captured -> results/20261007-211639/environment.txt
+[21:16:44] Experiment S — scalability sweep (5 10 25 50 100 150 200)
+[21:16:44] Preparing load generator container (mds-exp-load)
+       Building hey with the host Go toolchain ...
+  PASS hey ready in mds-exp-load
+[21:16:48] S — scaling to 5 instances
+       N=5  p50=19.30ms p95=77.70ms p99=117.40ms err=0.00% load1=3.21 mem=1216MB
+[21:18:04] S — scaling to 10 instances
+       N=10  p50=14.50ms p95=58.00ms p99=87.60ms err=0.00% load1=3.36 mem=1404MB
+[21:19:23] S — scaling to 25 instances
+       N=25  p50=12.70ms p95=52.50ms p99=78.50ms err=0.00% load1=2.46 mem=2053MB
+[21:22:48] S — scaling to 50 instances
+       N=50  p50=12.60ms p95=53.50ms p99=78.50ms err=0.00% load1=3.27 mem=3147MB
+[21:28:36] S — scaling to 100 instances
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s85 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s86 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s87 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s88 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s89 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s90 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s91 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s92 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s93 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s94 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s95 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s96 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s97 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s98 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s99 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s100 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+       N=100  p50=14.30ms p95=60.00ms p99=94.90ms err=0.00% load1=2.34 mem=4715MB
+[21:39:58] S — scaling to 150 instances
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s101 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s102 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s103 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s104 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s105 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s106 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s107 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s108 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s109 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s110 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s111 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s113 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s114 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s117 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Instance is not running
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s118 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s120 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s121 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s123 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s124 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s125 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s126 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s127 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s128 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s129 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s130 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s131 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s132 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s133 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s134 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s135 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s136 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s137 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s138 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s139 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s140 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s141 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s142 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s143 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s144 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s145 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s146 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s147 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s148 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s149 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s150 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+       N=150  p50=14.90ms p95=69.10ms p99=124.80ms err=0.00% load1=1.92 mem=4909MB
+[21:51:04] S — scaling to 200 instances
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s151 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s152 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s153 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s154 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s155 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s156 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s157 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s158 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s159 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s160 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s161 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s162 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s163 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s164 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s165 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s166 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s168 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s169 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s170 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s171 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s172 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s173 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s174 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s175 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s176 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s178 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s179 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s180 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s181 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s182 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s183 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Instance is not running
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s186 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s187 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s189 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s192 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Instance is not running
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s193 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s194 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s196 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s197 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+Error: Failed to retrieve PID of executing child process
+Error: Failed to retrieve PID of executing child process
+  FAIL mds-exp-s198 has no curl and apt fallback failed — bake curl into mds-ubuntu-2404
+       N=200  p50=13.20ms p95=55.60ms p99=85.40ms err=0.00% load1=2.15 mem=5171MB
+       Scalability table -> results/20261007-211639/scalability/scalability.csv
+[22:02:16] Done. Results in results/20261007-211639
+       Summary:
+section  name    verdict   detail
+S        S-n5    MEASURED  "p50=19.30ms p95=77.70ms p99=117.40ms err=0.00%"
+S        S-n10   MEASURED  "p50=14.50ms p95=58.00ms p99=87.60ms err=0.00%"
+S        S-n25   MEASURED  "p50=12.70ms p95=52.50ms p99=78.50ms err=0.00%"
+S        S-n50   MEASURED  "p50=12.60ms p95=53.50ms p99=78.50ms err=0.00%"
+S        S-n100  MEASURED  "p50=14.30ms p95=60.00ms p99=94.90ms err=0.00%"
+S        S-n150  MEASURED  "p50=14.90ms p95=69.10ms p99=124.80ms err=0.00%"
+S        S-n200  MEASURED  "p50=13.20ms p95=55.60ms p99=85.40ms err=0.00%"
+[22:02:16] Cleaning up mds-exp-* instances

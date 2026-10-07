@@ -1,0 +1,12 @@
+network:
+  version: 2
+  ethernets:
+    zz-bootstrap-dhcp:
+      match:
+        name: "eth0"
+      dhcp4: true
+    eth0:
+      nameservers:
+        search:
+        - mds-netcfg-test.local
+      dhcp4: true

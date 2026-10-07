@@ -1,0 +1,5 @@
+fd42:69d5:914e:5e7e::/64 dev eth0 proto ra metric 100 mtu 1500 hoplimit 64 pref medium
+fd42:69d5:914e:5e7e::/64 dev eth0 proto kernel metric 256 pref medium
+fe80::/64 dev eth0 proto kernel metric 256 pref medium
+default via fe80::216:3eff:fe8d:2326 dev eth0 proto ra metric 100 expires 1799sec mtu 1500 hoplimit 64 pref medium
+default via fe80::216:3eff:fe8d:2326 dev eth0 proto ra metric 1024 expires 1772sec hoplimit 64 pref medium

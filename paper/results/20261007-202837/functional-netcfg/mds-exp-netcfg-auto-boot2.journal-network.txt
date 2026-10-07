@@ -1,0 +1,40 @@
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Link UP
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Gained carrier
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Configuring with /run/systemd/network/10-netplan-zz-bootstrap-dhcp.network.
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Gained IPv6LL
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: Enumeration completed
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd[1]: Started systemd-networkd.service - Network Configuration.
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: DHCPv4 address 10.10.10.102/24, gateway 10.10.10.1 acquired from 10.10.10.1
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: netplan-ovs-cleanup.service - OpenVSwitch configuration for cleanup was skipped because of an unmet condition check (ConditionFileIsExecutable=/usr/bin/ovs-vsctl).
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: Stopping systemd-networkd.service - Network Configuration...
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: systemd-networkd.service: Deactivated successfully.
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: Stopped systemd-networkd.service - Network Configuration.
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: Starting systemd-networkd.service - Network Configuration...
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: Failed to increase receive buffer size for general netlink socket, ignoring: Operation not permitted
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: lo: Link UP
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: lo: Gained carrier
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Link UP
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Gained carrier
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Configuring with /run/systemd/network/10-netplan-eth0.network.
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Gained IPv6LL
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: Enumeration completed
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: Started systemd-networkd.service - Network Configuration.
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: DHCPv4 address 10.10.10.102/24, gateway 10.10.10.1 acquired from 10.10.10.1
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd[1]: netplan-ovs-cleanup.service - OpenVSwitch configuration for cleanup was skipped because of an unmet condition check (ConditionFileIsExecutable=/usr/bin/ovs-vsctl).
+Oct 07 20:40:35 mds-exp-netcfg-auto systemd[1]: Stopping systemd-networkd.service - Network Configuration...
+Oct 07 20:40:35 mds-exp-netcfg-auto systemd-networkd[719]: eth0: DHCP lease lost
+Oct 07 20:40:35 mds-exp-netcfg-auto systemd-networkd[719]: eth0: DHCPv6 lease lost
+Oct 07 20:40:35 mds-exp-netcfg-auto systemd[1]: systemd-networkd.service: Deactivated successfully.
+Oct 07 20:40:35 mds-exp-netcfg-auto systemd[1]: Stopped systemd-networkd.service - Network Configuration.
+-- Boot 5f174525968441649aa8401e865b3538 --
+Oct 07 20:40:37 mds-exp-netcfg-auto systemd[1]: Starting systemd-networkd.service - Network Configuration...
+Oct 07 20:40:37 mds-exp-netcfg-auto systemd-networkd[218]: Failed to increase receive buffer size for general netlink socket, ignoring: Operation not permitted
+Oct 07 20:40:37 mds-exp-netcfg-auto systemd-networkd[218]: lo: Link UP
+Oct 07 20:40:37 mds-exp-netcfg-auto systemd-networkd[218]: lo: Gained carrier
+Oct 07 20:40:37 mds-exp-netcfg-auto systemd-networkd[218]: eth0: Link UP
+Oct 07 20:40:37 mds-exp-netcfg-auto systemd-networkd[218]: eth0: Gained carrier
+Oct 07 20:40:37 mds-exp-netcfg-auto systemd-networkd[218]: eth0: Configuring with /run/systemd/network/10-netplan-eth0.network.
+Oct 07 20:40:37 mds-exp-netcfg-auto systemd-networkd[218]: Enumeration completed
+Oct 07 20:40:37 mds-exp-netcfg-auto systemd[1]: Started systemd-networkd.service - Network Configuration.
+Oct 07 20:40:37 mds-exp-netcfg-auto systemd-networkd[218]: eth0: DHCPv4 address 10.10.10.102/24, gateway 10.10.10.1 acquired from 10.10.10.1
+Oct 07 20:40:38 mds-exp-netcfg-auto systemd-networkd[218]: eth0: Gained IPv6LL

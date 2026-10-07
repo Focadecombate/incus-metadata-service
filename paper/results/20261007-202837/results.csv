@@ -1,0 +1,3 @@
+section,name,verdict,detail
+N,N1-netcfg-auto,NOT_APPLIED,"served config (addr '') not found in /etc/netplan after reboot; cloud-init.log has errors/warnings"
+N,N2-netcfg-admin,APPLIED,"search-domain marker from served config rendered to /etc/netplan and active in resolvectl after reboot (already on first boot)"

@@ -44,7 +44,10 @@ n = 5000, concurrency = 50.
 **Sync latency** (create → record served): **20.5 s** (one 10 s cron cycle plus
 boot/lease time).
 
-## S — Scalability 5→200 (→ 04_resultados.tex:67,69)
+## S (superseded) — Scalability 5→200, July run (→ 04_resultados.tex:67,69)
+
+> Superseded by the October re-run below (full raw CSV). Kept for reference.
+
 
 Load against `/meta-data`, n = 5000, concurrency = 50, at each instance count.
 First sweep 5–50 (`20260711-235653`); extended sweep 50–200 same host.
@@ -134,3 +137,66 @@ Consistent with the original single run (2.40 s) and with the 1 s heartbeat +
 1 s randomized election timeout. Only re-election time was measured in these
 runs; data availability after failover was verified in the original shared-Incus
 run above.
+
+## N — Does cloud-init consume /network-config? (→ 04_resultados.tex, F3) — run `20261007-202837`
+
+Same host type as above (`e2-standard-4`, Ubuntu 24.04, Incus 6.0.0, service
+commit `098f792`); guest: cloud-init 26.1-0ubuntu1~24.04.1, netplan.io 1.1.2.
+Script: `scripts/validate-network-config.sh`. A variant of the seed image
+re-enables cloud-init network management (a bootstrap DHCP netplan matched by
+interface *name* is kept so the guest can reach the service on first boot).
+Raw: `functional-netcfg/` (cloud-init status, /etc/netplan, networkd files,
+networkctl, ip addr/route, resolvectl, cloud-init.log excerpts, served config).
+
+| Test | Result | Evidence |
+|---|---|---|
+| N1 auto-generated network-config | **NOT CONSUMED** | cloud-init `status: done` via `DataSourceNoCloudNet`, but the service access log shows only `/meta-data`, `/user-data`, `/vendor-data` requests from the guest; `/network-config` was never requested |
+| N2 admin network-config (`cloud-init.network-config` key, dhcp4 + search-domain marker) | applied, **but not via the service** | marker present in `/etc/netplan/50-cloud-init.yaml` and `resolvectl`; it came from the local seed `/var/lib/cloud/seed/nocloud-net/network-config` that Incus renders from the same key |
+
+**Root cause:** `cloudinit/util.py::read_seeded()` (cloud-init 26.1) fetches
+`meta-data`, `user-data` and `vendor-data` from the `seedfrom` URL and hardcodes
+`network = None`; NoCloud reads `network-config` only from local seeds. So the
+service's `/network-config` endpoint is served correctly but is not part of the
+NoCloud-over-HTTP flow. Incus itself writes a local NoCloud seed
+(`meta-data`, `user-data`, `vendor-data`, `network-config` v1 DHCP by default)
+into every container.
+
+**Side findings on the auto-generated content** (relevant if any consumer
+applied it): `match: macaddress` renders to networkd `PermanentMACAddress=`,
+which a container veth never matches (interface left "unmanaged", no DHCP:
+observed with cloud-init's own fallback config); no gateway/nameservers; IPv6
+address emitted without prefix length.
+
+**Operational note:** after `incus restart`, `/network-config` (and the other
+endpoints) return 404 for the instance until the next 10 s sync cycle rewrites
+its IP; cloud-init's retries cover this window.
+
+**Infra note:** the 200-container sweep filled the default 40 GB boot disk at
+~95 containers (`dir` storage pool copies the full image per container);
+`terraform/variables.tf` now defaults `boot_disk_gb` to 250.
+
+## S — Scalability 5→200, re-run with full raw CSV (→ tab:escalabilidade, fig:escalabilidade) — run `20261007-211639`
+
+Same procedure (`scripts/run-experiments.sh S`, `SCALE_STEPS="5 10 25 50 100 150 200"`,
+n = 5000, c = 50 against `/meta-data`), host `e2-standard-4`, kernel
+7.0.0-1011-gcp, Incus 6.0.0, service commit `098f792`, 250 GB boot disk.
+Raw: `scalability/scalability.csv` + `hey-n*.csv` (per-request), `environment.txt`, `sweep.log`.
+
+| Instances | p50 (ms) | p95 (ms) | p99 (ms) | errors | mem used (MB) |
+|---|---|---|---|---|---|
+| 5 | 19.3 | 77.7 | 117.4 | 0.00% | 1216 |
+| 10 | 14.5 | 58.0 | 87.6 | 0.00% | 1404 |
+| 25 | 12.7 | 52.5 | 78.5 | 0.00% | 2053 |
+| 50 | 12.6 | 53.5 | 78.5 | 0.00% | 3147 |
+| 100 | 14.3 | 60.0 | 94.9 | 0.00% | 4715 |
+| 150 | 14.9 | 69.1 | 124.8 | 0.00% | 4909 |
+| 200 | 13.2 | 55.6 | 85.4 | 0.00% | 5171 |
+
+Same conclusion as July: no upward trend in latency with container count, 0%
+errors through 200. p99 is noisier than in July (117 ms at n=5, 125 ms at
+n=150, 85 ms at n=200). Host memory grows ~20 MB per container (container
+userspace, not the service) and differs from the July column, which was
+captured on kernel 6.17. The `sweep.log` contains 101 "has no curl" lines:
+they come from `incus exec` racing a just-launched container (PID not yet
+available); all 200 containers were created and synced (service log shows 200
+"creating new instance" entries, no launch failures).

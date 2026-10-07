@@ -1,0 +1,148 @@
+2026-10-07 20:38:43,467 - handlers.py[DEBUG]: start: init-network/activate-datasource: activating datasource
+2026-10-07 20:38:43,468 - handlers.py[DEBUG]: finish: init-network/activate-datasource: SUCCESS: activating datasource (duration: 0.001s)
+2026-10-07 20:38:43,479 - handlers.py[DEBUG]: start: init-network/config-seed_random: running config-seed_random with frequency once-per-instance
+2026-10-07 20:38:43,480 - handlers.py[DEBUG]: finish: init-network/config-seed_random: SUCCESS: config-seed_random ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:38:43,480 - handlers.py[DEBUG]: start: init-network/config-growpart: running config-growpart with frequency always
+2026-10-07 20:38:43,485 - handlers.py[DEBUG]: finish: init-network/config-growpart: SUCCESS: config-growpart ran successfully and took 0.005 seconds (duration: 0.005s)
+2026-10-07 20:38:43,485 - handlers.py[DEBUG]: start: init-network/config-resizefs: running config-resizefs with frequency always
+2026-10-07 20:38:43,486 - handlers.py[DEBUG]: finish: init-network/config-resizefs: SUCCESS: config-resizefs ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:38:43,486 - handlers.py[DEBUG]: start: init-network/config-mounts: running config-mounts with frequency once-per-instance
+2026-10-07 20:38:43,488 - handlers.py[DEBUG]: finish: init-network/config-mounts: SUCCESS: config-mounts ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:38:43,488 - handlers.py[DEBUG]: start: init-network/config-set_hostname: running config-set_hostname with frequency once-per-instance
+2026-10-07 20:38:43,492 - handlers.py[DEBUG]: finish: init-network/config-set_hostname: SUCCESS: config-set_hostname ran successfully and took 0.004 seconds (duration: 0.004s)
+2026-10-07 20:38:43,492 - handlers.py[DEBUG]: start: init-network/config-update_hostname: running config-update_hostname with frequency always
+2026-10-07 20:38:43,493 - handlers.py[DEBUG]: finish: init-network/config-update_hostname: SUCCESS: config-update_hostname ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:38:43,494 - handlers.py[DEBUG]: start: init-network/config-users_groups: running config-users_groups with frequency once-per-instance
+2026-10-07 20:38:43,513 - handlers.py[DEBUG]: finish: init-network/config-users_groups: SUCCESS: config-users_groups ran successfully and took 0.020 seconds (duration: 0.020s)
+2026-10-07 20:38:43,514 - handlers.py[DEBUG]: start: init-network/config-ssh: running config-ssh with frequency once-per-instance
+2026-10-07 20:38:45,592 - handlers.py[DEBUG]: finish: init-network/config-ssh: SUCCESS: config-ssh ran successfully and took 2.078 seconds (duration: 2.078s)
+2026-10-07 20:38:45,592 - handlers.py[DEBUG]: start: init-network/config-set_passwords: running config-set_passwords with frequency once-per-instance
+2026-10-07 20:38:45,593 - handlers.py[DEBUG]: finish: init-network/config-set_passwords: SUCCESS: config-set_passwords ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:38:45,594 - performance.py[DEBUG]: cloud-init stage: 'init-network' took 7.194 seconds
+2026-10-07 20:38:45,594 - handlers.py[DEBUG]: finish: init-network: FAIL: searching for network datasources (duration: 7.194s)
+2026-10-07 20:40:06,719 - sources[DEBUG]: Update datasource metadata and network config due to events: boot-new-instance
+2026-10-07 20:40:06,720 - util.py[DEBUG]: Reading from /var/lib/cloud/seed/nocloud/network-config (quiet=False)
+2026-10-07 20:40:06,720 - util.py[DEBUG]: Reading from /var/lib/cloud/seed/nocloud-net/network-config (quiet=False)
+2026-10-07 20:40:06,720 - util.py[DEBUG]: Reading 107 bytes from /var/lib/cloud/seed/nocloud-net/network-config
+2026-10-07 20:40:06,744 - DataSourceNoCloud.py[INFO]: DataSourceNoCloud  only uses seeds starting with ('/', 'file://') - will try to use http://10.10.10.1:8080/configs/ in the network stage.
+2026-10-07 20:40:06,750 - util.py[DEBUG]: Reading from /usr/lib/python3/dist-packages/cloudinit/config/schemas/schema-network-config-v2.json (quiet=False)
+2026-10-07 20:40:06,750 - util.py[DEBUG]: Reading 17906 bytes from /usr/lib/python3/dist-packages/cloudinit/config/schemas/schema-network-config-v2.json
+2026-10-07 20:40:06,750 - schema.py[DEBUG]: Validating network-config with netplan API
+2026-10-07 20:40:06,752 - util.py[DEBUG]: Writing to /run/cloud-init/tmp/tmpy25s9qh2/etc/netplan/network-config.yaml - wb: [600] 201 bytes
+2026-10-07 20:40:06,755 - networking.py[DEBUG]: net: all expected physical devices present
+2026-10-07 20:40:06,755 - stages.py[DEBUG]: applying net config names for {'ethernets': {'eth0': {'dhcp4': True, 'dhcp6': True, 'set-name': 'eth0', 'match': {'macaddress': '00:16:3e:e0:95:db'}}}, 'version': 2}
+2026-10-07 20:40:06,762 - stages.py[INFO]: Applying network configuration from fallback bringup=False: {'ethernets': {'eth0': {'dhcp4': True, 'dhcp6': True, 'set-name': 'eth0', 'match': {'macaddress': '00:16:3e:e0:95:db'}}}, 'version': 2}
+2026-10-07 20:40:06,762 - util.py[DEBUG]: Writing to /run/cloud-init/sem/apply_network_config.once - wb: [644] 24 bytes
+2026-10-07 20:40:06,763 - distros[DEBUG]: Selected renderer 'netplan' from priority list: ['netplan', 'eni', 'sysconfig']
+2026-10-07 20:40:06,763 - network_state.py[DEBUG]: Passthrough netplan v2 config
+2026-10-07 20:40:06,763 - netplan.py[DEBUG]: V2 to V2 passthrough
+2026-10-07 20:40:06,763 - util.py[DEBUG]: Reading from /etc/netplan/50-cloud-init.yaml (quiet=False)
+2026-10-07 20:40:06,764 - util.py[DEBUG]: Reading 157 bytes from /etc/netplan/50-cloud-init.yaml
+2026-10-07 20:40:06,767 - netplan.py[DEBUG]: Rendered netplan config using netplan python API
+2026-10-07 20:40:06,767 - subp.py[DEBUG]: Running command ['netplan', 'generate'] with allowed return codes [0] (shell=False, capture=True)
+2026-10-07 20:40:07,423 - performance.py[DEBUG]: Running ['netplan', 'generate'] took 0.656 seconds
+2026-10-07 20:40:07,437 - distros[DEBUG]: Not bringing up newly configured network interfaces
+2026-10-07 20:40:08,166 - handlers.py[DEBUG]: start: init-network/check-cache: attempting to read from cache [trust]
+2026-10-07 20:40:08,167 - handlers.py[DEBUG]: finish: init-network/check-cache: SUCCESS: no cache found (duration: 0.001s)
+2026-10-07 20:40:08,171 - sources[DEBUG]: Looking for data source in: ['NoCloud', 'None'], via packages ['', 'cloudinit.sources'] that matches dependencies ['FILESYSTEM', 'NETWORK']
+2026-10-07 20:40:08,174 - sources[DEBUG]: Searching for network data source in: ['DataSourceNoCloudNet', 'DataSourceNone']
+2026-10-07 20:40:08,174 - handlers.py[DEBUG]: start: init-network/search-NoCloudNet: searching for network data from DataSourceNoCloudNet
+2026-10-07 20:40:08,174 - sources[DEBUG]: Update datasource metadata and network config due to events: boot-new-instance
+2026-10-07 20:40:08,175 - util.py[DEBUG]: Reading from /var/lib/cloud/seed/nocloud/network-config (quiet=False)
+2026-10-07 20:40:08,175 - util.py[DEBUG]: Reading from /var/lib/cloud/seed/nocloud-net/network-config (quiet=False)
+2026-10-07 20:40:08,175 - util.py[DEBUG]: Reading 107 bytes from /var/lib/cloud/seed/nocloud-net/network-config
+2026-10-07 20:40:27,286 - handlers.py[DEBUG]: finish: init-network/search-NoCloudNet: SUCCESS: found network data from DataSourceNoCloudNet (duration: 19.112s)
+2026-10-07 20:40:27,323 - atomic_helper.py[DEBUG]: Atomically writing to file /var/lib/cloud/instance/network-config.json (via temporary file /var/lib/cloud/instance/tmpkl8f4kut) - w: [600] 162 bytes/chars
+2026-10-07 20:40:27,323 - util.py[DEBUG]: Creating symbolic link from '/run/cloud-init/network-config.json' => '/var/lib/cloud/instance/network-config.json'
+2026-10-07 20:40:27,323 - util.py[DEBUG]: Reading from /usr/lib/python3/dist-packages/cloudinit/config/schemas/schema-network-config-v1.json (quiet=False)
+2026-10-07 20:40:27,324 - util.py[DEBUG]: Reading 22494 bytes from /usr/lib/python3/dist-packages/cloudinit/config/schemas/schema-network-config-v1.json
+2026-10-07 20:40:27,330 - networking.py[DEBUG]: net: all expected physical devices present
+2026-10-07 20:40:27,330 - stages.py[DEBUG]: applying net config names for {'version': 1, 'config': [{'type': 'physical', 'name': 'eth0', 'subnets': [{'type': 'dhcp', 'control': 'auto'}]}]}
+2026-10-07 20:40:27,330 - stages.py[INFO]: Applying network configuration from ds bringup=True: {'version': 1, 'config': [{'type': 'physical', 'name': 'eth0', 'subnets': [{'type': 'dhcp', 'control': 'auto'}]}]}
+2026-10-07 20:40:27,330 - distros[DEBUG]: Selected renderer 'netplan' from priority list: ['netplan', 'eni', 'sysconfig']
+2026-10-07 20:40:27,333 - util.py[DEBUG]: Reading from /etc/netplan/50-cloud-init.yaml (quiet=False)
+2026-10-07 20:40:27,333 - util.py[DEBUG]: Reading 157 bytes from /etc/netplan/50-cloud-init.yaml
+2026-10-07 20:40:27,336 - netplan.py[DEBUG]: Rendered netplan config using netplan python API
+2026-10-07 20:40:27,336 - subp.py[DEBUG]: Running command ['netplan', 'generate'] with allowed return codes [0] (shell=False, capture=True)
+2026-10-07 20:40:27,931 - performance.py[DEBUG]: Running ['netplan', 'generate'] took 0.595 seconds
+2026-10-07 20:40:27,945 - distros[DEBUG]: Bringing up newly configured network interfaces
+2026-10-07 20:40:27,946 - activators.py[DEBUG]: Using selected activator: <class 'cloudinit.net.activators.NetplanActivator'> from priority: ['netplan', 'eni', 'network-manager', 'networkd']
+2026-10-07 20:40:27,946 - subp.py[DEBUG]: Running command ['netplan', 'apply'] with allowed return codes [0] (shell=False, capture=True)
+2026-10-07 20:40:28,835 - performance.py[DEBUG]: Running ['netplan', 'apply'] took 0.890 seconds
+Falling back to a hard restart of systemd-networkd.service
+2026-10-07 20:40:28,836 - handlers.py[DEBUG]: start: init-network/setup-datasource: setting up datasource
+2026-10-07 20:40:28,836 - handlers.py[DEBUG]: finish: init-network/setup-datasource: SUCCESS: setting up datasource (duration: 0.000s)
+2026-10-07 20:40:28,848 - handlers.py[DEBUG]: start: init-network/consume-user-data: reading and applying user-data
+2026-10-07 20:40:28,850 - handlers.py[DEBUG]: finish: init-network/consume-user-data: SUCCESS: reading and applying user-data (duration: 0.002s)
+2026-10-07 20:40:28,850 - handlers.py[DEBUG]: start: init-network/consume-vendor-data: reading and applying vendor-data
+2026-10-07 20:40:28,850 - handlers.py[DEBUG]: finish: init-network/consume-vendor-data: SUCCESS: reading and applying vendor-data (duration: 0.000s)
+2026-10-07 20:40:28,850 - handlers.py[DEBUG]: start: init-network/consume-vendor-data2: reading and applying vendor-data2
+2026-10-07 20:40:28,850 - handlers.py[DEBUG]: finish: init-network/consume-vendor-data2: SUCCESS: reading and applying vendor-data2 (duration: 0.000s)
+2026-10-07 20:40:28,870 - handlers.py[DEBUG]: start: init-network/activate-datasource: activating datasource
+2026-10-07 20:40:28,871 - handlers.py[DEBUG]: finish: init-network/activate-datasource: SUCCESS: activating datasource (duration: 0.001s)
+2026-10-07 20:40:28,884 - handlers.py[DEBUG]: start: init-network/config-seed_random: running config-seed_random with frequency once-per-instance
+2026-10-07 20:40:28,885 - handlers.py[DEBUG]: finish: init-network/config-seed_random: SUCCESS: config-seed_random ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:40:28,885 - handlers.py[DEBUG]: start: init-network/config-growpart: running config-growpart with frequency always
+2026-10-07 20:40:28,890 - handlers.py[DEBUG]: finish: init-network/config-growpart: SUCCESS: config-growpart ran successfully and took 0.005 seconds (duration: 0.005s)
+2026-10-07 20:40:28,890 - handlers.py[DEBUG]: start: init-network/config-resizefs: running config-resizefs with frequency always
+2026-10-07 20:40:28,891 - handlers.py[DEBUG]: finish: init-network/config-resizefs: SUCCESS: config-resizefs ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:40:28,891 - handlers.py[DEBUG]: start: init-network/config-mounts: running config-mounts with frequency once-per-instance
+2026-10-07 20:40:28,893 - handlers.py[DEBUG]: finish: init-network/config-mounts: SUCCESS: config-mounts ran successfully and took 0.002 seconds (duration: 0.002s)
+2026-10-07 20:40:28,894 - handlers.py[DEBUG]: start: init-network/config-set_hostname: running config-set_hostname with frequency once-per-instance
+2026-10-07 20:40:28,895 - handlers.py[DEBUG]: finish: init-network/config-set_hostname: SUCCESS: config-set_hostname ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:40:28,895 - handlers.py[DEBUG]: start: init-network/config-update_hostname: running config-update_hostname with frequency always
+2026-10-07 20:40:28,896 - handlers.py[DEBUG]: finish: init-network/config-update_hostname: SUCCESS: config-update_hostname ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:40:28,896 - handlers.py[DEBUG]: start: init-network/config-users_groups: running config-users_groups with frequency once-per-instance
+2026-10-07 20:40:28,915 - handlers.py[DEBUG]: finish: init-network/config-users_groups: SUCCESS: config-users_groups ran successfully and took 0.019 seconds (duration: 0.019s)
+2026-10-07 20:40:28,915 - handlers.py[DEBUG]: start: init-network/config-ssh: running config-ssh with frequency once-per-instance
+2026-10-07 20:40:29,467 - handlers.py[DEBUG]: finish: init-network/config-ssh: SUCCESS: config-ssh ran successfully and took 0.552 seconds (duration: 0.552s)
+2026-10-07 20:40:29,468 - handlers.py[DEBUG]: start: init-network/config-set_passwords: running config-set_passwords with frequency once-per-instance
+2026-10-07 20:40:29,468 - handlers.py[DEBUG]: finish: init-network/config-set_passwords: SUCCESS: config-set_passwords ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:40:29,471 - performance.py[DEBUG]: cloud-init stage: 'init-network' took 21.373 seconds
+2026-10-07 20:40:29,471 - handlers.py[DEBUG]: finish: init-network: SUCCESS: searching for network datasources (duration: 21.373s)
+2026-10-07 20:40:31,360 - stages.py[DEBUG]: Allowed events: {<EventScope.NETWORK: 'network'>: {<EventType.BOOT_NEW_INSTANCE: 'boot-new-instance'>}}
+2026-10-07 20:40:31,360 - stages.py[DEBUG]: Event Denied: scopes=['network'] EventType=hotplug
+2026-10-07 20:40:37,438 - stages.py[DEBUG]: Allowed events: {<EventScope.NETWORK: 'network'>: {<EventType.BOOT_NEW_INSTANCE: 'boot-new-instance'>}}
+2026-10-07 20:40:37,438 - stages.py[DEBUG]: Event Denied: scopes=['network'] EventType=boot
+2026-10-07 20:40:37,438 - stages.py[DEBUG]: Allowed events: {<EventScope.NETWORK: 'network'>: {<EventType.BOOT_NEW_INSTANCE: 'boot-new-instance'>}}
+2026-10-07 20:40:37,438 - stages.py[DEBUG]: Event Denied: scopes=['network'] EventType=boot-legacy
+2026-10-07 20:40:37,438 - stages.py[DEBUG]: No network config applied. Neither a new instance nor datasource network update allowed
+2026-10-07 20:40:37,438 - stages.py[DEBUG]: applying net config names for {'version': 1, 'config': [{'type': 'physical', 'name': 'eth0', 'subnets': [{'type': 'dhcp', 'control': 'auto'}]}]}
+2026-10-07 20:40:38,720 - handlers.py[DEBUG]: start: init-network/check-cache: attempting to read from cache [trust]
+2026-10-07 20:40:38,726 - handlers.py[DEBUG]: finish: init-network/check-cache: SUCCESS: restored from cache with run check: DataSourceNoCloudNet [seed=/var/lib/cloud/seed/nocloud-net,ds_config_seedfrom,http://10.10.10.1:8080/configs/] (duration: 0.006s)
+2026-10-07 20:40:38,747 - stages.py[DEBUG]: Allowed events: {<EventScope.NETWORK: 'network'>: {<EventType.BOOT_NEW_INSTANCE: 'boot-new-instance'>}}
+2026-10-07 20:40:38,747 - stages.py[DEBUG]: Event Denied: scopes=['network'] EventType=boot
+2026-10-07 20:40:38,748 - stages.py[DEBUG]: Allowed events: {<EventScope.NETWORK: 'network'>: {<EventType.BOOT_NEW_INSTANCE: 'boot-new-instance'>}}
+2026-10-07 20:40:38,748 - stages.py[DEBUG]: Event Denied: scopes=['network'] EventType=boot-legacy
+2026-10-07 20:40:38,748 - stages.py[DEBUG]: No network config applied. Neither a new instance nor datasource network update allowed
+2026-10-07 20:40:38,748 - stages.py[DEBUG]: applying net config names for {'version': 1, 'config': [{'type': 'physical', 'name': 'eth0', 'subnets': [{'type': 'dhcp', 'control': 'auto'}]}]}
+2026-10-07 20:40:38,749 - handlers.py[DEBUG]: start: init-network/setup-datasource: setting up datasource
+2026-10-07 20:40:38,749 - handlers.py[DEBUG]: finish: init-network/setup-datasource: SUCCESS: setting up datasource (duration: 0.000s)
+2026-10-07 20:40:38,753 - handlers.py[DEBUG]: start: init-network/consume-user-data: reading and applying user-data
+2026-10-07 20:40:38,755 - handlers.py[DEBUG]: finish: init-network/consume-user-data: SUCCESS: reading and applying user-data (duration: 0.002s)
+2026-10-07 20:40:38,755 - handlers.py[DEBUG]: start: init-network/consume-vendor-data: reading and applying vendor-data
+2026-10-07 20:40:38,756 - handlers.py[DEBUG]: finish: init-network/consume-vendor-data: SUCCESS: reading and applying vendor-data (duration: 0.000s)
+2026-10-07 20:40:38,756 - handlers.py[DEBUG]: start: init-network/consume-vendor-data2: reading and applying vendor-data2
+2026-10-07 20:40:38,756 - handlers.py[DEBUG]: finish: init-network/consume-vendor-data2: SUCCESS: reading and applying vendor-data2 (duration: 0.000s)
+2026-10-07 20:40:38,775 - handlers.py[DEBUG]: start: init-network/activate-datasource: activating datasource
+2026-10-07 20:40:38,776 - handlers.py[DEBUG]: finish: init-network/activate-datasource: SUCCESS: activating datasource (duration: 0.001s)
+2026-10-07 20:40:38,788 - handlers.py[DEBUG]: start: init-network/config-seed_random: running config-seed_random with frequency once-per-instance
+2026-10-07 20:40:38,788 - handlers.py[DEBUG]: finish: init-network/config-seed_random: SUCCESS: config-seed_random previously ran (duration: 0.000s)
+2026-10-07 20:40:38,788 - handlers.py[DEBUG]: start: init-network/config-growpart: running config-growpart with frequency always
+2026-10-07 20:40:38,793 - handlers.py[DEBUG]: finish: init-network/config-growpart: SUCCESS: config-growpart ran successfully and took 0.005 seconds (duration: 0.005s)
+2026-10-07 20:40:38,794 - handlers.py[DEBUG]: start: init-network/config-resizefs: running config-resizefs with frequency always
+2026-10-07 20:40:38,794 - handlers.py[DEBUG]: finish: init-network/config-resizefs: SUCCESS: config-resizefs ran successfully and took 0.001 seconds (duration: 0.001s)
+2026-10-07 20:40:38,795 - handlers.py[DEBUG]: start: init-network/config-mounts: running config-mounts with frequency once-per-instance
+2026-10-07 20:40:38,795 - handlers.py[DEBUG]: finish: init-network/config-mounts: SUCCESS: config-mounts previously ran (duration: 0.000s)
+2026-10-07 20:40:38,795 - handlers.py[DEBUG]: start: init-network/config-set_hostname: running config-set_hostname with frequency once-per-instance
+2026-10-07 20:40:38,795 - handlers.py[DEBUG]: finish: init-network/config-set_hostname: SUCCESS: config-set_hostname previously ran (duration: 0.000s)
+2026-10-07 20:40:38,795 - handlers.py[DEBUG]: start: init-network/config-update_hostname: running config-update_hostname with frequency always
+2026-10-07 20:40:38,796 - handlers.py[DEBUG]: finish: init-network/config-update_hostname: SUCCESS: config-update_hostname ran successfully and took 0.000 seconds (duration: 0.001s)
+2026-10-07 20:40:38,796 - handlers.py[DEBUG]: start: init-network/config-users_groups: running config-users_groups with frequency once-per-instance
+2026-10-07 20:40:38,796 - handlers.py[DEBUG]: finish: init-network/config-users_groups: SUCCESS: config-users_groups previously ran (duration: 0.000s)
+2026-10-07 20:40:38,797 - handlers.py[DEBUG]: start: init-network/config-ssh: running config-ssh with frequency once-per-instance
+2026-10-07 20:40:38,797 - handlers.py[DEBUG]: finish: init-network/config-ssh: SUCCESS: config-ssh previously ran (duration: 0.000s)
+2026-10-07 20:40:38,797 - handlers.py[DEBUG]: start: init-network/config-set_passwords: running config-set_passwords with frequency once-per-instance
+2026-10-07 20:40:38,797 - handlers.py[DEBUG]: finish: init-network/config-set_passwords: SUCCESS: config-set_passwords previously ran (duration: 0.000s)
+2026-10-07 20:40:38,799 - performance.py[DEBUG]: cloud-init stage: 'init-network' took 0.147 seconds
+2026-10-07 20:40:38,799 - handlers.py[DEBUG]: finish: init-network: SUCCESS: searching for network datasources (duration: 0.148s)

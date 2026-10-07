@@ -1,0 +1,22 @@
+### /run/systemd/network/10-netplan-eth0.network
+[Match]
+Name=eth0
+
+[Network]
+DHCP=ipv4
+LinkLocalAddressing=ipv6
+
+[DHCP]
+RouteMetric=100
+UseMTU=true
+### /run/systemd/network/10-netplan-zz-bootstrap-dhcp.network
+[Match]
+Name=eth0
+
+[Network]
+DHCP=ipv4
+LinkLocalAddressing=ipv6
+
+[DHCP]
+RouteMetric=100
+UseMTU=true

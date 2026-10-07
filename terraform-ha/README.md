@@ -24,9 +24,14 @@ gcloud compute ssh incus-ha-node1 --zone us-central1-a --tunnel-through-iap -- \
 # Confirm the cluster formed (one Leader, two Follower):
 terraform output -raw raft_status_check | bash
 
-# Run the failover experiment:
+# Run the failover experiment once (formation, replication, one leader kill):
 ZONE=us-central1-a ./failover-test.sh          # uses your default gcloud SSH key
 # or: ZONE=us-central1-a KEY=/path/to/key ./failover-test.sh
+
+# Repeat the leader-kill re-election measurement N times. A poller on a
+# survivor node times leader-down -> new-leader over the internal network
+# (50 ms polling), so the interval does not include SSH latency:
+ZONE=us-central1-a RUNS=10 OUTDIR=../paper/results/$(date -u +%Y%m%d-%H%M%S)-ha ./failover-repeat.sh
 
 terraform destroy          # when done
 ```

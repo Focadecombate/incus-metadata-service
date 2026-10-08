@@ -203,7 +203,7 @@ func (em *EventManager) getHandlerRegistry() HandlerRegistry {
 // handleInstanceCreated handles instance creation events
 func (em *EventManager) handleInstanceCreated(ctx context.Context, args map[string]any) (GoEventBus.Result, error) {
 	handlerLogger := em.logger.With().Str("handler", "instance_created").Logger()
-	
+
 	instanceName, ok := args["instance"].(string)
 	if !ok {
 		handlerLogger.Error().Msg("Invalid instance argument type")
@@ -687,9 +687,9 @@ func (em *EventManager) handleInstancesSync(ctx context.Context, args map[string
 			},
 			Projection: InstanceSyncProjection,
 		}
-		
+
 		tx.Publish(event)
-		
+
 		handlerLogger.Debug().
 			Str("instance_name", instance.Name).
 			Str("instance_type", string(instance.Type)).

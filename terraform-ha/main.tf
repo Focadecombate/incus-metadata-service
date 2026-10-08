@@ -21,7 +21,8 @@ resource "google_compute_firewall" "ssh" {
   }
 }
 
-# Raft inter-node traffic within the subnet.
+# Raft inter-node traffic within the subnet, plus the service port so a
+# survivor node can poll the other nodes' /raft/status during failover runs.
 resource "google_compute_firewall" "raft" {
   name          = "incus-ha-allow-raft"
   network       = google_compute_network.ha.id
@@ -29,7 +30,7 @@ resource "google_compute_firewall" "raft" {
   source_ranges = ["10.20.0.0/24"]
   allow {
     protocol = "tcp"
-    ports    = [tostring(var.raft_port)]
+    ports    = [tostring(var.raft_port), tostring(var.service_port)]
   }
 }
 

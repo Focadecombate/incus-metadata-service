@@ -106,7 +106,7 @@ func (cm *CronManager) AddJobs() error {
 	cm.logger.Info().Msg("Adding cron jobs")
 
 	jobs := cm.getJobDefinitions()
-	
+
 	for _, job := range jobs {
 		if err := cm.addJob(job); err != nil {
 			cm.logger.Error().
@@ -115,7 +115,7 @@ func (cm *CronManager) AddJobs() error {
 				Msg("Failed to add cron job")
 			return fmt.Errorf("failed to add job %s: %w", job.Name, err)
 		}
-		
+
 		cm.logger.Info().
 			Str("job_name", job.Name).
 			Dur("interval", job.Interval).

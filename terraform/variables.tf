@@ -33,9 +33,9 @@ variable "enable_nested_virtualization" {
 }
 
 variable "boot_disk_gb" {
-  description = "Boot disk size in GB."
+  description = "Boot disk size in GB. Incus is initialised with the `dir` storage driver on this disk, so every container holds a full copy of the ~600 MB image: the 200-container scalability sweep needs well over 150 GB (40 GB filled up at ~95 containers)."
   type        = number
-  default     = 40
+  default     = 250
 }
 
 variable "use_spot" {

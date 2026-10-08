@@ -1,0 +1,7 @@
+ethernets:
+    eth0:
+        dhcp4: true
+        nameservers:
+            search:
+                - mds-netcfg-test.local
+version: 2

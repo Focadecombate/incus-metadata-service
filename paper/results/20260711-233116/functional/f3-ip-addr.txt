@@ -1,0 +1,2 @@
+1: lo    inet 127.0.0.1/8 scope host lo\       valid_lft forever preferred_lft forever
+16: eth0    inet 10.10.10.39/24 metric 100 brd 10.10.10.255 scope global dynamic eth0\       valid_lft 3530sec preferred_lft 3530sec

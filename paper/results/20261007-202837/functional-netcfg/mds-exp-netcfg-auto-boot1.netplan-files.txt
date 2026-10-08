@@ -1,0 +1,13 @@
+### /etc/netplan/10-bootstrap-dhcp.yaml
+network:
+  version: 2
+  ethernets:
+    zz-bootstrap-dhcp:
+      match: {name: eth0}
+      dhcp4: true
+### /etc/netplan/50-cloud-init.yaml
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: true

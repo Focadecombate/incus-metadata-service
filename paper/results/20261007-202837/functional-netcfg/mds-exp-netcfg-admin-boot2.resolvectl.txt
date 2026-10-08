@@ -1,0 +1,9 @@
+Global
+         Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+  resolv.conf mode: stub
+
+Link 28 (eth0)
+    Current Scopes: DNS
+         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+       DNS Servers: 10.10.10.1 fd42:69d5:914e:5e7e::1 fe80::216:3eff:fe8d:2326
+        DNS Domain: mds-netcfg-test.local incus

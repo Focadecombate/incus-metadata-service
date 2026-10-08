@@ -1,0 +1,43 @@
+● 22: eth0
+                   Link File: /usr/lib/systemd/network/99-default.link
+                Network File: /run/systemd/network/10-netplan-eth0.network
+                       State: routable (configured)
+                Online state: online
+                        Type: ether
+                        Kind: veth
+                      Driver: veth
+            Hardware Address: 00:16:3e:e0:95:db (Xensource, Inc.)
+                         MTU: 1500 (min: 68, max: 65535)
+                       QDisc: noqueue
+IPv6 Address Generation Mode: eui64
+    Number of Queues (Tx/Rx): 4/4
+            Auto negotiation: no
+                       Speed: 10Gbps
+                      Duplex: full
+                        Port: tp
+                     Address: 10.10.10.102 (DHCP4 via 10.10.10.1)
+                              fd42:69d5:914e:5e7e:216:3eff:fee0:95db
+                              fe80::216:3eff:fee0:95db
+                     Gateway: 10.10.10.1
+                              fe80::216:3eff:fe8d:2326
+                              fe80::216:3eff:fe8d:2326
+                         DNS: 10.10.10.1
+                              fd42:69d5:914e:5e7e::1
+                              fe80::216:3eff:fe8d:2326
+              Search Domains: incus
+           Activation Policy: up
+         Required For Online: yes
+             DHCP4 Client ID: IAID:0xb44c8b26/DUID
+           DHCP6 Client IAID: 0xb44c8b26
+           DHCP6 Client DUID: DUID-EN/Vendor:0000ab112ad55c3a10e91d41
+
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Link UP
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Gained carrier
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Configuring with /run/systemd/network/10-netplan-zz-bootstrap-dhcp.network.
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: Gained IPv6LL
+Oct 07 20:40:07 mds-exp-netcfg-auto systemd-networkd[354]: eth0: DHCPv4 address 10.10.10.102/24, gateway 10.10.10.1 acquired from 10.10.10.1
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Link UP
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Gained carrier
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Configuring with /run/systemd/network/10-netplan-eth0.network.
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: Gained IPv6LL
+Oct 07 20:40:28 mds-exp-netcfg-auto systemd-networkd[719]: eth0: DHCPv4 address 10.10.10.102/24, gateway 10.10.10.1 acquired from 10.10.10.1

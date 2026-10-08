@@ -1,0 +1,6 @@
+section,name,verdict,detail
+P,P1-meta-data,MEASURED,"p50=13.20ms p95=53.70ms p99=83.20ms ok=5000/5000"
+P,P1-user-data,MEASURED,"p50=18.90ms p95=53.60ms p99=72.40ms ok=5000/5000"
+P,P1-vendor-data,MEASURED,"p50=17.00ms p95=48.40ms p99=68.90ms ok=0/5000"
+P,P1-network-config,MEASURED,"p50=11.40ms p95=47.20ms p99=72.40ms ok=5000/5000"
+P,P2-sync-latency,MEASURED,"20.5s create->served"

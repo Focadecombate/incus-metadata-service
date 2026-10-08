@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -202,7 +203,7 @@ func (em *EventManager) getHandlerRegistry() HandlerRegistry {
 // handleInstanceCreated handles instance creation events
 func (em *EventManager) handleInstanceCreated(ctx context.Context, args map[string]any) (GoEventBus.Result, error) {
 	handlerLogger := em.logger.With().Str("handler", "instance_created").Logger()
-	
+
 	instanceName, ok := args["instance"].(string)
 	if !ok {
 		handlerLogger.Error().Msg("Invalid instance argument type")
@@ -232,11 +233,12 @@ func (em *EventManager) handleInstanceCreated(ctx context.Context, args map[stri
 // extractNetworkAddresses extracts IPv4 and IPv6 addresses, MAC addresses, and interface
 // info from the Incus instance state network data.
 type ifaceInfo struct {
-	Name    string
-	Hwaddr  string
-	IPv4    string
-	IPv6    string
-	Netmask string
+	Name     string
+	Hwaddr   string
+	IPv4     string
+	IPv6     string
+	Netmask  string // IPv4 prefix length as reported by Incus (e.g. "24")
+	Netmask6 string // IPv6 prefix length as reported by Incus (e.g. "64")
 }
 
 func extractInterfaceInfo(state *incus.InstanceState) []ifaceInfo {
@@ -268,6 +270,7 @@ func extractInterfaceInfo(state *incus.InstanceState) []ifaceInfo {
 			case "inet6":
 				if info.IPv6 == "" {
 					info.IPv6 = addr.Address
+					info.Netmask6 = addr.Netmask
 				}
 			}
 		}
@@ -276,6 +279,73 @@ func extractInterfaceInfo(state *incus.InstanceState) []ifaceInfo {
 	}
 
 	return ifaces
+}
+
+// netGateway is the gateway (and DNS resolver) of an Incus managed bridge,
+// taken from its ipv4.address / ipv6.address config.
+type netGateway struct {
+	IPv4 string
+	IPv6 string
+}
+
+// networkGatewayLookup resolves an Incus network name to its gateway. ok is
+// false when the network is unknown, unmanaged or has no IPv4 gateway.
+type networkGatewayLookup func(network string) (gw netGateway, ok bool)
+
+// ipFromCIDR returns the address part of "a.b.c.d/n" (or "" if unparsable).
+func ipFromCIDR(cidr string) string {
+	ip, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return ""
+	}
+	return ip.String()
+}
+
+// lookupNetworkGateway implements networkGatewayLookup against the Incus API.
+func (em *EventManager) lookupNetworkGateway(name string) (netGateway, bool) {
+	if name == "" {
+		return netGateway{}, false
+	}
+	network, _, err := em.app.Incus.GetNetwork(name)
+	if err != nil || network == nil || !network.Managed {
+		return netGateway{}, false
+	}
+	gw := netGateway{
+		IPv4: ipFromCIDR(network.Config["ipv4.address"]),
+		IPv6: ipFromCIDR(network.Config["ipv6.address"]),
+	}
+	return gw, gw.IPv4 != ""
+}
+
+// buildNetworkConfig renders the instance's interfaces as Networking Config v2:
+// static addresses, default route and DNS via the Incus bridge gateway, or
+// dhcp4 when the gateway is unknown. Interfaces are keyed by name, not MAC
+// (netplan's MAC match never fits a container veth).
+func buildNetworkConfig(ifaces []ifaceInfo, devices map[string]map[string]string, lookup networkGatewayLookup) types.NetworkConfig {
+	ethernets := make(map[string]types.Ethernet, len(ifaces))
+	for _, iface := range ifaces {
+		dev := devices[iface.Name]
+		gw, ok := lookup(dev["network"])
+		if !ok || iface.IPv4 == "" || iface.Netmask == "" {
+			ethernets[iface.Name] = types.Ethernet{DHCP4: true}
+			continue
+		}
+
+		eth := types.Ethernet{
+			Addresses:   []string{fmt.Sprintf("%s/%s", iface.IPv4, iface.Netmask)},
+			Routes:      []types.Route{{To: "0.0.0.0/0", Via: gw.IPv4}},
+			Nameservers: &types.Nameservers{Addresses: []string{gw.IPv4}},
+		}
+		if iface.IPv6 != "" && iface.Netmask6 != "" {
+			eth.Addresses = append(eth.Addresses, fmt.Sprintf("%s/%s", iface.IPv6, iface.Netmask6))
+			if gw.IPv6 != "" {
+				eth.Routes = append(eth.Routes, types.Route{To: "::/0", Via: gw.IPv6})
+			}
+		}
+		ethernets[iface.Name] = eth
+	}
+
+	return types.NetworkConfig{Version: 2, Ethernets: ethernets}
 }
 
 // handleInstanceSync handles single instance synchronization events
@@ -457,33 +527,7 @@ func (em *EventManager) handleInstanceSync(ctx context.Context, args map[string]
 
 	if networkConfigBytes == nil {
 		// Auto-generate network config from runtime state (netplan v2 format)
-		ethernets := make(map[string]types.Ethernet)
-		for _, iface := range ifaces {
-			var addresses []string
-			if iface.IPv4 != "" {
-				addr := iface.IPv4
-				if iface.Netmask != "" {
-					addr = fmt.Sprintf("%s/%s", iface.IPv4, iface.Netmask)
-				}
-				addresses = append(addresses, addr)
-			}
-			if iface.IPv6 != "" {
-				addresses = append(addresses, iface.IPv6)
-			}
-
-			eth := types.Ethernet{
-				Addresses: addresses,
-			}
-			if iface.Hwaddr != "" {
-				eth.Match = &types.Match{MacAddress: iface.Hwaddr}
-			}
-			ethernets[iface.Name] = eth
-		}
-
-		networkConfig := types.NetworkConfig{
-			Version:   2,
-			Ethernets: ethernets,
-		}
+		networkConfig := buildNetworkConfig(ifaces, instance.ExpandedDevices, em.lookupNetworkGateway)
 
 		var err error
 		networkConfigBytes, err = json.Marshal(networkConfig)
@@ -640,9 +684,9 @@ func (em *EventManager) handleInstancesSync(ctx context.Context, args map[string
 			},
 			Projection: InstanceSyncProjection,
 		}
-		
+
 		tx.Publish(event)
-		
+
 		handlerLogger.Debug().
 			Str("instance_name", instance.Name).
 			Str("instance_type", string(instance.Type)).

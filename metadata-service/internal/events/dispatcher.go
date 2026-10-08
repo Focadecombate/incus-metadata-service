@@ -317,13 +317,10 @@ func (em *EventManager) lookupNetworkGateway(name string) (netGateway, bool) {
 	return gw, gw.IPv4 != ""
 }
 
-// buildNetworkConfig auto-generates a Networking Config v2 document from the
-// instance's runtime interfaces. Interfaces are keyed by name (no MAC match:
-// netplan renders match.macaddress as PermanentMACAddress=, which a container
-// veth never satisfies). When the NIC is attached to a managed Incus network
-// with a known gateway, a static config with addresses, default routes and the
-// gateway as nameserver is emitted; otherwise the interface falls back to
-// DHCPv4 so the guest keeps connectivity.
+// buildNetworkConfig renders the instance's interfaces as Networking Config v2:
+// static addresses, default route and DNS via the Incus bridge gateway, or
+// dhcp4 when the gateway is unknown. Interfaces are keyed by name, not MAC
+// (netplan's MAC match never fits a container veth).
 func buildNetworkConfig(ifaces []ifaceInfo, devices map[string]map[string]string, lookup networkGatewayLookup) types.NetworkConfig {
 	ethernets := make(map[string]types.Ethernet, len(ifaces))
 	for _, iface := range ifaces {

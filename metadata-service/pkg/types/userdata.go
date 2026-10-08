@@ -4,7 +4,7 @@ package types
 // These structures represent the user data configuration for cloud-init,
 type User struct {
 	Name              string   `json:"name" yaml:"name"`
-	Sudo              string   `json:"sudo" yaml:"sudo"` 
+	Sudo              string   `json:"sudo" yaml:"sudo"`
 	Shell             string   `json:"shell" yaml:"shell"`
 	SSHAuthorizedKeys []string `json:"ssh_authorized_keys" yaml:"ssh_authorized_keys"`
 	Groups            []string `json:"groups" yaml:"groups"`

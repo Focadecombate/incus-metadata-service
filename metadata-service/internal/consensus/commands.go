@@ -18,6 +18,6 @@ const (
 
 // Command represents a write operation to be replicated via RAFT.
 type Command struct {
-	Type CommandType `json:"type"`
+	Type CommandType     `json:"type"`
 	Data json.RawMessage `json:"data"`
 }

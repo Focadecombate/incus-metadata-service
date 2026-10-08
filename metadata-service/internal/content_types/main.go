@@ -23,10 +23,10 @@ func ValidateContentType(c *gin.Context, requested_content_type string, allowed_
 	}
 
 	c.JSON(http.StatusNotAcceptable, gin.H{
-		"error": "Unsupported content type",
-		"message": "The requested content type is not supported. Please use one of the following: " + strings.Join(allowed, ", "),
+		"error":                  "Unsupported content type",
+		"message":                "The requested content type is not supported. Please use one of the following: " + strings.Join(allowed, ", "),
 		"requested_content_type": requested_content_type,
-		"allowed_content_types": allowed,
+		"allowed_content_types":  allowed,
 	})
 
 	return false
@@ -77,4 +77,3 @@ func IsYamlContentType(requested_content_type string) bool {
 func IsScriptContentType(requested_content_type string) bool {
 	return slices.Contains(ScriptContentTypes, requested_content_type)
 }
-

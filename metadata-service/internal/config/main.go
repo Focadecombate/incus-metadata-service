@@ -13,9 +13,9 @@ type IncusConfig struct {
 	// TLSConfig holds the TLS configuration for connecting to the Incus server.
 	TLSClientCert string `env:"TLS_CLIENT_CERT,default=/etc/incus/client.crt"`
 	// TLSClientKey is the path to the client key for TLS connections.
-	TLSClientKey string `env:"TLS_CLIENT_KEY,default=/etc/incus/client.key"`
-	TLSServerCert string `env:"TLS_SERVER_CERT,default="` // Optional, can be left empty to use default server certificate handling
-	TLSInsecureSkipVerify bool `env:"TLS_INSECURE_SKIP_VERIFY,default=false"` // Skip certificate verification for self-signed certs
+	TLSClientKey          string `env:"TLS_CLIENT_KEY,default=/etc/incus/client.key"`
+	TLSServerCert         string `env:"TLS_SERVER_CERT,default="`               // Optional, can be left empty to use default server certificate handling
+	TLSInsecureSkipVerify bool   `env:"TLS_INSECURE_SKIP_VERIFY,default=false"` // Skip certificate verification for self-signed certs
 }
 
 type DatabaseConfig struct {

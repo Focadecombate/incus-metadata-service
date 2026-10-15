@@ -94,7 +94,8 @@
               forma autônoma.
         \item \textbf{Datasource NoCloud}~\cite{cloudinit_nocloud}: obtém dados de uma
               URL base (\texttt{seedfrom}) consultando \texttt{/meta-data},
-              \texttt{/user-data}, \texttt{/vendor-data} e \texttt{/network-config};
+              \texttt{/user-data} e \texttt{/vendor-data} (\texttt{network-config}
+              só de \textit{seed} local);
               exige apenas \texttt{instance-id} e \texttt{local-hostname}.
         \item \textbf{RAFT}~\cite{ongaro2014raft}: consenso distribuído compreensível
               (eleição de líder + replicação de log); base da alta disponibilidade.
@@ -118,11 +119,13 @@
             GCP Metadata        & \cellZ & \cellO & \cellZ & \cellO & \cellO & \cellZ \\
             OpenStack Metadata  & \cellZ & \cellO & \cellZ & \cellO & \cellO & \cellO \\
             LXD/Incus (atual)   & \cellO & \cellZ & \cellO & \cellO & \cellZ & \cellO \\
-            \textbf{Este trabalho} & \cellO & \cellO & \cellO & \cellO & \cellO & \cellO \\
+            \textbf{Este trabalho} & \cellO & \cellO & \cellO & $\circ$ & \cellO & \cellO \\
             \bottomrule
         \end{tabular}%
         }
     \end{table}
+    {\footnotesize $\circ$: suportado pelo projeto, mas não avaliado experimentalmente.}
+
     \vspace{0.3cm}
     \textbf{Lacuna:} na revisão realizada, não foi identificado serviço de metadados
     leve e autônomo que implemente o protocolo HTTP esperado pelo cloud-init para o Incus.
@@ -135,7 +138,7 @@
 \begin{frame}{Visão Geral}
     \begin{itemize}
         \item Serviço de metadados compatível com cloud-init para instâncias Incus
-              (contêineres e VMs).
+              (projetado para contêineres e VMs; avaliado com contêineres).
         \item API REST consultada pelas instâncias durante o \textit{boot}, seguindo o
               modelo do \textit{datasource} NoCloud HTTP.
         \item A instância é identificada pelo \textbf{endereço IP de origem} da
@@ -224,7 +227,7 @@
         \item \texttt{GET /configs/vendor-data}: por instância, com \textit{fallback}
               global.
         \item \texttt{GET /configs/network-config}: definida pelo administrador ou
-              gerada automaticamente.
+              gerada automaticamente; não consultado pelo NoCloud via HTTP.
     \end{itemize}
     \vspace{0.3cm}
     Endpoints internos (\texttt{/internal/vendor/*}): criação, consulta e atualização
@@ -235,8 +238,9 @@
     \begin{itemize}
         \item \textit{Datasource} NoCloud em modo rede: \texttt{seedfrom} aponta para
               \texttt{/configs/} do serviço; o cloud-init concatena
-              \texttt{meta-data}, \texttt{user-data}, \texttt{vendor-data} e
-              \texttt{network-config}.
+              \texttt{meta-data}, \texttt{user-data} e \texttt{vendor-data}.
+              O NoCloud não requisita \texttt{network-config} pelo \texttt{seedfrom}:
+              a rede aplicada vem do \textit{seed} local gravado pelo Incus.
         \item O \texttt{seedfrom} precisa existir antes de qualquer consulta: fica em
               um \textit{drop-in} do cloud-init gravado na \textbf{imagem-base}
               (uma configuração por imagem, não por instância; sem agentes).
@@ -311,7 +315,7 @@
     \begin{table}
         \centering
         \small
-        \begin{tabular}{lc}
+        \begin{tabular}{>{\raggedright\arraybackslash}p{0.55\textwidth} >{\raggedright\arraybackslash}p{0.38\textwidth}}
             \toprule
             \textbf{Propriedade} & \textbf{Resultado} \\
             \midrule
@@ -325,8 +329,8 @@
     \end{table}
     \vspace{0.3cm}
     Inicialização real: cloud-init selecionou o \textit{datasource} NoCloud de rede,
-    obteve os dados (HTTP 200) e concluiu com \texttt{cloud-init status: done}:
-    compatibilidade de ponta a ponta.
+    obteve \textit{meta-data} e \textit{user-data} (HTTP 200) e concluiu com
+    \texttt{cloud-init status: done}: compatibilidade de ponta a ponta para esses dados.
 \end{frame}
 
 \begin{frame}{Desempenho: Latência da API}
@@ -355,7 +359,7 @@
 \begin{frame}{Desempenho: Escalabilidade}
     \begin{table}
         \centering
-        \small
+        \footnotesize
         \begin{tabular}{lccccc}
             \toprule
             \textbf{Instâncias} & \textbf{p50 (ms)} & \textbf{p95 (ms)} & \textbf{p99 (ms)} & \textbf{Erros} & \textbf{Mem. host (MB)} \\
@@ -371,11 +375,13 @@
     \end{table}
     \vspace{0.3cm}
     \begin{itemize}
-        \item Hipótese inicial: degradação por serialização de escrita do SQLite.
-        \item \textbf{Não corroborada} até 200 contêineres de sistema em host único:
-              sem tendência de crescimento da latência e zero erros; carga dominada por leituras, e escritas
-              a cada 10~s absorvidas pelo modo WAL e pelo \textit{busy timeout}.
-              Uma execução por configuração (valores indicativos).
+        \item Varia só o número de contêineres; a carga HTTP é a mesma em todas as
+              linhas (5000 requisições, \textbf{concorrência fixa de 50}). Não mede
+              muitas instâncias consultando ao mesmo tempo.
+        \item Degradação por escrita serializada do SQLite \textbf{não corroborada}
+              até 200 contêineres: latência sem tendência de alta e zero erros
+              (leituras dominam; escritas a cada 10~s absorvidas pelo WAL). Uma
+              execução por configuração.
     \end{itemize}
 \end{frame}
 
@@ -389,17 +395,19 @@
             Formação do \textit{cluster} & 1 líder + 2 seguidores \\
             Replicação de estado & instância presente nos 3 nós \\
             Reeleição após falha do líder & \textbf{2{,}04~s} em média (10 execuções; 1{,}46 a 2{,}65~s) \\
-            Disponibilidade após \textit{failover} & preservada \\
+            Dados após \textit{failover} & preservados \\
             Reintegração de nó & reingressa como seguidor \\
             \bottomrule
         \end{tabular}
     \end{table}
     \vspace{0.3cm}
     \begin{itemize}
-        \item Topologia avaliada: réplicas sobre um Incus compartilhado: reconciliação
-              correta e \textit{failover} sem perda de dados.
-        \item Um Incus por nó (borda distribuída) exigiria reconciliação por nó de
-              origem.
+        \item 2{,}04~s é o intervalo \textbf{sem líder}, não a indisponibilidade
+              percebida pelas instâncias (não medida): seguidores seguem respondendo
+              leituras; a sincronização volta no ciclo seguinte (até 10~s); instância
+              apontada para o nó que caiu fica sem resposta (sem VIP/balanceador).
+        \item Topologia: réplicas sobre um \textbf{Incus compartilhado}, que continua
+              ponto único de falha para a sincronização (cenário não testado).
     \end{itemize}
 \end{frame}
 
@@ -407,15 +415,17 @@
     \begin{itemize}
         \item Cobre os campos essenciais dos módulos mais comuns do cloud-init
               (\texttt{set\_hostname}, \texttt{users\_groups}, \texttt{write\_files},
-              \texttt{runcmd}, rede).
+              \texttt{runcmd}); rede apenas servida.
         \item \textbf{Limitações}:
         \begin{itemize}
             \item SQLite serializa escritas: potencial gargalo bem acima da escala
                   avaliada;
             \item subconjunto dos campos de AWS/GCP (sem tipo de instância,
                   faturamento);
-            \item garantias de \textit{failover} pressupõem a topologia de Incus
-                  compartilhado.
+            \item \textit{failover} pressupõe o Incus compartilhado, que segue como
+                  ponto único de falha;
+            \item correções posteriores na geração do \texttt{network-config} não
+                  foram reavaliadas experimentalmente.
         \end{itemize}
         \item \textbf{Ameaças à validade}: host único nos testes de desempenho;
               contêineres de sistema (não VMs completas); janela de inconsistência do
@@ -438,7 +448,7 @@
         \item Validado em ambiente real (contêineres de sistema, host único):
               \textit{boots} completos com sucesso, latências de dezenas de
               milissegundos, latência estável até 200 contêineres e reeleição de
-              líder em 2{,}04~s em média (10 execuções).
+              líder em 2{,}04~s em média (10 execuções; intervalo sem líder).
         \item Código aberto, binário único, implantação simples, adequado a
               \textit{homelabs}, borda e nuvens privadas de pequena escala.
     \end{itemize}
@@ -457,7 +467,7 @@
         \item \textit{Benchmarks} em maior escala, com repetições para análise estatística.
         \item Levar o \texttt{network-config} a um caminho consumido pelo cloud-init
               (\textit{datasource} via rede ou \textit{seed} local do Incus); o conteúdo
-              gerado já foi corrigido após os experimentos.
+              gerado foi corrigido após os experimentos, mas não reavaliado.
     \end{enumerate}
 \end{frame}
 

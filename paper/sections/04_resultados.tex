@@ -41,14 +41,14 @@ A avaliação funcional verificou se o serviço de metadados entrega as informa�
 \centering
 \caption{Resultados dos testes funcionais.}
 \label{tab:funcional}
-\begin{tabular}{lc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{6.2cm} >{\raggedright\arraybackslash}p{6.4cm}}
 \hline
 \textbf{Propriedade} & \textbf{Resultado} \\
 \hline
 Isolamento de metadados & Aprovado \\
 Isolamento sob manipulação do cabeçalho \texttt{X-Forwarded-For} & Aprovado \\
 Execução de \textit{user-data} & Aprovado \\
-Entrega de \textit{network-config} & Servido; não consultado pelo NoCloud via HTTP \\
+Entrega de \textit{network-config} & Conteúdo servido; não consultado pelo NoCloud via HTTP (não aplicado pelo \textit{cloud-init}) \\
 Propagação de estado após reinício & Aprovado \\
 \hline
 \end{tabular}
@@ -89,11 +89,11 @@ A latência de sincronização (intervalo entre a criação de uma instância no
 
 \subsubsection{Escalabilidade}
 
-Para avaliar o comportamento com o aumento do número de instâncias simultâneas, mediu-se a latência de resposta do \textit{endpoint} \texttt{/meta-data} para configurações de 5 a 200 contêineres de sistema em execução no mesmo host. A hipótese inicial era de que, por utilizar SQLite como mecanismo de persistência, o serviço apresentasse degradação de desempenho sob alta concorrência de escrita, dado que o SQLite serializa operações de escrita \citep{sqlite2024}. A Tabela~\ref{tab:escalabilidade} apresenta os resultados e a Figura~\ref{fig:escalabilidade} os representa graficamente. Cada configuração corresponde a uma única execução de 5000 requisições, de modo que os valores devem ser lidos como indicativos.
+Para avaliar o comportamento com o aumento do número de instâncias simultâneas, mediu-se a latência de resposta do \textit{endpoint} \texttt{/meta-data} para configurações de 5 a 200 contêineres de sistema em execução no mesmo host. A variável independente deste experimento é apenas o número de contêineres em execução: a carga HTTP é a mesma em todas as configurações (5000 requisições com concorrência fixa de 50, disparadas por um único contêiner gerador de carga). O experimento mede, portanto, o efeito de mais instâncias sincronizadas e de maior ocupação do host sobre a latência; o número de clientes HTTP simultâneos não cresce com o número de contêineres. A hipótese inicial era de que, por utilizar SQLite como mecanismo de persistência, o serviço apresentasse degradação de desempenho sob alta concorrência de escrita, dado que o SQLite serializa operações de escrita \citep{sqlite2024}. A Tabela~\ref{tab:escalabilidade} apresenta os resultados e a Figura~\ref{fig:escalabilidade} os representa graficamente. Cada configuração corresponde a uma única execução de 5000 requisições, de modo que os valores devem ser lidos como indicativos.
 
 \begin{table}[ht]
 \centering
-\caption{Escalabilidade: latência de \texttt{/meta-data} e memória utilizada no host por número de contêineres em execução.}
+\caption{Escalabilidade: latência de \texttt{/meta-data} e memória utilizada no host por número de contêineres em execução. A carga HTTP é constante em todas as linhas (5000 requisições, concorrência 50).}
 \label{tab:escalabilidade}
 \begin{tabular}{lccccc}
 \hline
@@ -113,11 +113,11 @@ Para avaliar o comportamento com o aumento do número de instâncias simultânea
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{figures/escalabilidade}
-\caption{Escalabilidade em host único com contêineres de sistema: (a) latência de \texttt{/meta-data} nos percentis p50, p95 e p99 e (b) memória utilizada no host, por número de contêineres em execução. Uma execução de 5000 requisições (concorrência 50) por configuração; valores indicativos.}
+\caption{Escalabilidade em host único com contêineres de sistema, em função do número de contêineres em execução: (a) latência de \texttt{/meta-data} nos percentis p50 (mediana), p95 e p99; (b) memória utilizada no host. A carga HTTP é a mesma em todos os pontos (uma execução de 5000 requisições com concorrência fixa de 50); apenas o número de contêineres varia. Valores indicativos.}
 \label{fig:escalabilidade}
 \end{figure}
 
-Os dados \textbf{não corroboram} a hipótese de degradação por serialização de escrita nessa faixa de escala: a latência não apresentou tendência de crescimento com o número de contêineres (p50 entre 12{,}6 e 19{,}3~ms; p99 entre 78{,}5 e 124{,}8~ms, com o maior valor em 150 contêineres e o menor em 25 e 50) e a taxa de erro foi nula em todas as configurações, até 200 contêineres de sistema em um único host de 4 vCPUs, sob carga HTTP constante de 5000 requisições com concorrência 50. Esse resultado não foi medido com máquinas virtuais nem em topologias com múltiplos hosts. Esse resultado decorre da natureza do fluxo predominante, majoritariamente requisições de leitura (\texttt{GET}) de metadados, enquanto as escritas de sincronização ocorrem apenas a cada 10~s e são absorvidas pelo modo WAL e pelo \textit{busy timeout} configurados no SQLite (Seção~\ref{subsec_metodologia}). Conclui-se que a serialização de escrita não é um gargalo no perfil de carga avaliado; uma eventual degradação exigiria contagens de instâncias ou taxas de escrita substancialmente superiores, o que se registra como limite medido e não como tendência de degradação linear.
+Os dados \textbf{não corroboram} a hipótese de degradação por serialização de escrita nessa faixa de escala: a latência não apresentou tendência de crescimento com o número de contêineres (p50 entre 12{,}6 e 19{,}3~ms; p99 entre 78{,}5 e 124{,}8~ms, com o maior valor em 150 contêineres e o menor em 25 e 50) e a taxa de erro foi nula em todas as configurações, até 200 contêineres de sistema em um único host de 4 vCPUs, sob carga HTTP constante de 5000 requisições com concorrência 50. Como a concorrência HTTP não acompanhou o número de contêineres, o resultado não indica o comportamento do serviço quando muitas instâncias o consultam ao mesmo tempo, como em uma inicialização simultânea em massa. Esse resultado também não foi medido com máquinas virtuais nem em topologias com múltiplos hosts. Esse resultado decorre da natureza do fluxo predominante, majoritariamente requisições de leitura (\texttt{GET}) de metadados, enquanto as escritas de sincronização ocorrem apenas a cada 10~s e são absorvidas pelo modo WAL e pelo \textit{busy timeout} configurados no SQLite (Seção~\ref{subsec_metodologia}). Conclui-se que a serialização de escrita não é um gargalo no perfil de carga avaliado; uma eventual degradação exigiria contagens de instâncias ou taxas de escrita substancialmente superiores, o que se registra como limite medido e não como tendência de degradação linear.
 
 \subsection{Avaliação de Alta Disponibilidade}
 \label{subsec_avaliacao_ha}
@@ -128,7 +128,7 @@ Para avaliar o mecanismo de alta disponibilidade baseado em consenso RAFT, provi
 \centering
 \caption{Resultados da avaliação de alta disponibilidade (\textit{cluster} de 3 nós).}
 \label{tab:ha}
-\begin{tabular}{ll}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.2cm} >{\raggedright\arraybackslash}p{7.4cm}}
 \hline
 \textbf{Propriedade} & \textbf{Resultado} \\
 \hline
@@ -143,6 +143,10 @@ Reintegração de nó & nó reiniciado reingressa como seguidor \\
 
 O \textit{cluster} formou-se corretamente, com eleição de um único líder. Uma instância criada no Incus compartilhado teve seu registro replicado aos três nós. Ao encerrar-se o serviço do líder (mantendo-se o Incus compartilhado ativo), um novo líder foi eleito em 2{,}40~s em uma primeira execução do cenário, e os dados replicados permaneceram disponíveis nos nós sobreviventes, sem remoção indevida. Um nó previamente encerrado foi capaz de reingressar ao \textit{cluster} e recuperar o estado a partir do \textit{log}. Para caracterizar a variabilidade do tempo de reeleição, o cenário de falha foi repetido dez vezes em um \textit{cluster} reprovisionado com a mesma configuração: a cada repetição, o processo do líder corrente foi encerrado com \texttt{SIGKILL} e um nó sobrevivente mediu, por sondagem a cada 50~ms pela rede interna, o intervalo entre a última resposta do líder e a primeira resposta de um nó como novo líder. Todas as repetições resultaram em reeleição, com tempo \textbf{médio de 2{,}04~s} (mediana 2{,}04~s; mínimo 1{,}46~s; máximo 2{,}65~s; desvio padrão 0{,}38~s), valores coerentes com os \textit{timeouts} configurados (\textit{heartbeat} de 1~s e eleição de 1~s, com temporização aleatória do RAFT). Nessas repetições mediu-se apenas o tempo de reeleição; a disponibilidade dos dados após o \textit{failover} foi verificada na execução inicial.
 
+O tempo de reeleição não equivale ao tempo de indisponibilidade do serviço percebido pelas instâncias, que não foi medido. Durante a eleição, os seguidores sobreviventes continuam aptos a responder leituras a partir de sua cópia local do estado (Seção~\ref{subsec_raft}); o que fica suspenso é a sincronização com o Incus e a replicação de novas escritas, retomadas pelo novo líder no ciclo de sincronização seguinte (até 10~s após a eleição). Para as instâncias, a indisponibilidade efetiva depende de como alcançam o \textit{cluster}: uma instância cujo \texttt{seedfrom} aponte para o endereço do nó que falhou permanece sem resposta até que esse nó retorne, independentemente da reeleição, e nenhum mecanismo de endereço virtual ou balanceamento entre os nós foi avaliado neste trabalho.
+
+Além disso, a topologia de Incus compartilhado torna o serviço dependente de uma única instância do Incus: a replicação via RAFT protege contra a falha do processo do serviço de metadados, mas não contra a falha do próprio Incus. Se o Incus compartilhado ficar indisponível, nenhum nó consegue sincronizar, e o \textit{cluster} passa a servir apenas o último estado replicado até que o Incus volte. Esse cenário não foi testado.
+
 Observou-se que a corretude da rotina de reconciliação (que remove registros de instâncias ausentes do Incus) depende da topologia adotada: sob a topologia de Incus compartilhado, todo nó que possa assumir a liderança observa o mesmo conjunto de instâncias, de modo que a reconciliação é correta e o \textit{failover} não provoca perda de dados. Uma topologia alternativa, com um Incus por nó (adequada a cenários de borda distribuída), exigiria reconciliação restrita às instâncias de cada nó de origem, de forma que um nó jamais removesse instâncias pertencentes a outro.
 
 \subsection{Comparação com Provedores de Nuvem}
@@ -152,7 +156,7 @@ Para contextualizar as capacidades do serviço proposto, a Tabela~\ref{tab:compa
 
 \begin{table}[ht]
 \centering
-\caption{Comparação de campos de metadados (\ding{51} suportado; \ding{55} não suportado; P: parcial).}
+\caption{Comparação de campos de metadados (\ding{51} suportado; \ding{55} não suportado; P: parcial). Para o serviço proposto, \texttt{network-config} é marcado como parcial: o conteúdo é servido, mas não é consumido pelo \textit{datasource} NoCloud via HTTP.}
 \label{tab:comparacao_campos}
 \begin{tabular}{lcccc}
 \hline
@@ -166,17 +170,17 @@ Chaves SSH públicas         & \ding{51} & \ding{51} & \ding{51} & \ding{51} \\
 Tipo de instância           & \ding{55} & \ding{51} & \ding{51} & \ding{51} \\
 \texttt{user-data}          & \ding{51} & \ding{51} & \ding{51} & \ding{51} \\
 \texttt{vendor-data}        & \ding{51} & \ding{55} & \ding{55} & \ding{51} \\
-\texttt{network-config}     & \ding{51} & P & P & \ding{51} \\
+\texttt{network-config}     & P & P & P & \ding{51} \\
 \hline
 \end{tabular}
 \end{table}
 
-O serviço proposto cobre os campos essenciais para a operação dos módulos mais comuns do \textit{cloud-init} (\texttt{set\_hostname}, \texttt{users\_groups}, \texttt{write\_files}, \texttt{runcmd} e configuração de rede), oferecendo também entrega de \textit{vendor-data} por instância com \textit{fallback} global. Para a configuração de rede, a cobertura refere-se ao conteúdo servido; o \textit{datasource} NoCloud do \textit{cloud-init} não consome esse \textit{endpoint} via HTTP (Seção~\ref{subsec_avaliacao_funcional}). Campos específicos de provedores públicos, como tipo de instância e atributos de faturamento, não são expostos, por não se aplicarem ao contexto de \textit{homelab} e computação de borda visado.
+O serviço proposto cobre os campos essenciais para a operação dos módulos mais comuns do \textit{cloud-init} (\texttt{set\_hostname}, \texttt{users\_groups}, \texttt{write\_files} e \texttt{runcmd}), oferecendo também entrega de \textit{vendor-data} por instância com \textit{fallback} global. A configuração de rede é coberta apenas parcialmente: o conteúdo é servido, mas o \textit{datasource} NoCloud do \textit{cloud-init} não consome esse \textit{endpoint} via HTTP (Seção~\ref{subsec_avaliacao_funcional}), e as correções feitas posteriormente na geração automática dessa configuração não foram reavaliadas experimentalmente. Campos específicos de provedores públicos, como tipo de instância e atributos de faturamento, não são expostos, por não se aplicarem ao contexto de \textit{homelab} e computação de borda visado.
 
 \subsection{Discussão}
 \label{subsec_discussao}
 
-Os resultados obtidos permitem avaliar em que medida o serviço de metadados proposto atende aos requisitos de um ambiente Incus de pequena escala. Do ponto de vista funcional, o serviço demonstrou corretude no isolamento de metadados (inclusive sob manipulação do cabeçalho \texttt{X-Forwarded-For}) e na entrega de \textit{meta-data} e \textit{user-data} efetivamente aplicados pelo \textit{cloud-init}, validando a premissa de compatibilidade com o \textit{datasource} de rede \citep{cloudinit2024}; a configuração de rede servida, contudo, não é consumida pelo \textit{datasource} NoCloud via HTTP. Do ponto de vista de desempenho, a natureza leve da implementação traduziu-se em latências de dezenas de milissegundos e em latência estável até 200 contêineres de sistema em host único. Do ponto de vista de disponibilidade, o mecanismo de consenso demonstrou eleição e recuperação de líder da ordem de segundos, de forma consistente em dez repetições do cenário de falha.
+Os resultados obtidos permitem avaliar em que medida o serviço de metadados proposto atende aos requisitos de um ambiente Incus de pequena escala. Do ponto de vista funcional, o serviço demonstrou corretude no isolamento de metadados (inclusive sob manipulação do cabeçalho \texttt{X-Forwarded-For}) e na entrega de \textit{meta-data} e \textit{user-data} efetivamente aplicados pelo \textit{cloud-init}, validando a premissa de compatibilidade com o \textit{datasource} de rede \citep{cloudinit2024}; a configuração de rede servida, contudo, não é consumida pelo \textit{datasource} NoCloud via HTTP. Do ponto de vista de desempenho, a natureza leve da implementação traduziu-se em latências de dezenas de milissegundos e em latência estável até 200 contêineres de sistema em host único. Do ponto de vista de disponibilidade, o mecanismo de consenso demonstrou reeleição de líder da ordem de segundos, de forma consistente em dez repetições do cenário de falha; esse valor mede o intervalo sem líder; a indisponibilidade efetiva do serviço para as instâncias não foi medida.
 
 Entre as limitações do serviço proposto, destacam-se:
 
@@ -185,7 +189,7 @@ Entre as limitações do serviço proposto, destacam-se:
 
     \item \textbf{Cobertura parcial de campos de metadados}: o serviço implementa o subconjunto de campos necessários aos módulos mais comuns do \textit{cloud-init}, mas não cobre todos os campos de provedores como AWS e GCP \citep{aws_imds, gcp_metadata}. Cargas que dependam de campos específicos podem requerer extensões.
 
-    \item \textbf{Dependência da topologia na alta disponibilidade}: as garantias de disponibilidade sem perda de dados no \textit{failover} pressupõem a topologia de réplicas sobre um Incus compartilhado; cenários com um Incus por nó demandam reconciliação por nó de origem.
+    \item \textbf{Dependência da topologia na alta disponibilidade}: as garantias de disponibilidade sem perda de dados no \textit{failover} pressupõem a topologia de réplicas sobre um Incus compartilhado; cenários com um Incus por nó demandam reconciliação por nó de origem. Nessa topologia, o Incus compartilhado permanece como ponto único de falha para a sincronização, e o acesso das instâncias a um nó sobrevivente depende de um mecanismo de endereçamento (endereço virtual ou balanceador) não avaliado.
 
     \item \textbf{Configuração de rede não consumida via HTTP}: o \textit{datasource} NoCloud do \textit{cloud-init} lê \texttt{network-config} apenas de fontes locais, de modo que o \textit{endpoint} \texttt{/network-config} do serviço só é útil a consumidores que o consultem diretamente. Integrar a configuração de rede ao fluxo do \textit{cloud-init} exigiria um \textit{datasource} que a obtenha pela rede ou a gravação do \textit{seed} local do Incus. Além disso, na versão avaliada, a configuração gerada automaticamente usava casamento por endereço MAC, que o netplan traduz em \texttt{PermanentMACAddress} e que interfaces \textit{veth} de contêineres não satisfazem, e omitia gateway, servidores DNS e o prefixo do endereço IPv6. Esses defeitos foram corrigidos no código após os experimentos (interfaces identificadas por nome, gateway e DNS obtidos da rede gerenciada do Incus à qual a interface está ligada, prefixo IPv6 incluído, e DHCP como alternativa quando o gateway é desconhecido), mas a versão corrigida não foi reavaliada e, pelo motivo exposto, não é consumida pelo \textit{cloud-init} no fluxo NoCloud via HTTP.
 

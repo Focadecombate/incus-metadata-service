@@ -75,7 +75,7 @@ def main() -> None:
     series = [
         ("p99", p99, "#222222", "-", "o"),
         ("p95", p95, "#555555", "--", "s"),
-        ("p50", p50, "#888888", ":", "^"),
+        ("p50 (mediana)", p50, "#888888", ":", "^"),
     ]
     for label, ys, color, ls, marker in series:
         ax_lat.plot(
@@ -88,40 +88,34 @@ def main() -> None:
             linewidth=1.4,
             label=label,
         )
-        ax_lat.annotate(
-            label,
-            (n[-1], ys[-1]),
-            xytext=(4, 0),
-            textcoords="offset points",
-            va="center",
-            fontsize=8,
-        )
-    ax_lat.set_xlabel("Contêineres em execução")
-    ax_lat.set_ylabel("Latência de /meta-data (ms)")
+    ax_lat.set_xlabel("Contêineres em execução no host")
+    ax_lat.set_ylabel("Latência (ms)")
     ax_lat.set_ylim(0, 140)
-    ax_lat.set_xlim(0, 230)
+    ax_lat.set_xlim(0, 210)
     ax_lat.set_xticks(XTICKS)
     ax_lat.grid(axis="y", color="#dddddd", linewidth=0.6)
     ax_lat.legend(
-        loc="lower right",
-        bbox_to_anchor=(1.0, 0.22),
+        # Na faixa vazia entre as curvas p95 e p50, sem cobrir pontos.
+        loc="center",
+        bbox_to_anchor=(0.5, 0.25),
         frameon=False,
         ncol=3,
-        columnspacing=1.0,
-        handlelength=2.2,
+        fontsize=7.5,
+        columnspacing=0.9,
+        handlelength=2.0,
     )
-    ax_lat.set_title("(a) Latência", loc="left", fontsize=9)
+    ax_lat.set_title("(a) Latência de /meta-data", loc="left", fontsize=9)
 
     ax_mem.plot(
         n, mem, color="#222222", linestyle="-", marker="o", markersize=4, linewidth=1.4
     )
-    ax_mem.set_xlabel("Contêineres em execução")
-    ax_mem.set_ylabel("Memória utilizada no host (MB)")
+    ax_mem.set_xlabel("Contêineres em execução no host")
+    ax_mem.set_ylabel("Memória (MB)")
     ax_mem.set_ylim(0, 6000)
-    ax_mem.set_xlim(0, 230)
+    ax_mem.set_xlim(0, 210)
     ax_mem.set_xticks(XTICKS)
     ax_mem.grid(axis="y", color="#dddddd", linewidth=0.6)
-    ax_mem.set_title("(b) Memória do host", loc="left", fontsize=9)
+    ax_mem.set_title("(b) Memória utilizada no host", loc="left", fontsize=9)
 
     fig.tight_layout(w_pad=2.0)
     OUT.parent.mkdir(parents=True, exist_ok=True)
